@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="prjMouseWrap2.exe"/>
+    <OBJFILES value="prjMouseWrap2.obj main.obj mw2_move_recon.obj mw2_stats.obj"/>
+    <RESFILES value="prjMouseWrap2.res"/>
+    <IDLFILES value=""/>
+    <IDLGENFILES value=""/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) main.dfm"/>
+    <LIBFILES value=""/>
+    <LIBRARIES value=""/>
+    <SPARELIBS value="vcl.lib rtl.lib bcbsmp.lib vclx.lib"/>
+    <PACKAGES value="vcl.bpi rtl.bpi dbrtl.bpi adortl.bpi vcldb.bpi vclx.bpi bdertl.bpi 
+      vcldbx.bpi ibxpress.bpi dsnap.bpi cds.bpi bdecds.bpi qrpt.bpi teeui.bpi 
+      teedb.bpi tee.bpi dss.bpi teeqr.bpi visualclx.bpi visualdbclx.bpi 
+      dsnapcrba.bpi dsnapcon.bpi bcbsmp.bpi vclie.bpi xmlrtl.bpi inet.bpi 
+      inetdbbde.bpi inetdbxpress.bpi inetdb.bpi nmfast.bpi webdsnap.bpi 
+      bcbie.bpi websnap.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi 
+      indy.bpi bcb2kaxserver.bpi"/>
+    <PATHCPP value=".;"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value=""/>
+    <SYSDEFINES value="NO_STRICT;_RTLDLL;USEPACKAGES"/>
+    <MAINSOURCE value="prjMouseWrap2.cpp"/>
+    <INCLUDEPATH value="&quot;E:\Program Files\Borland\CBuilder6\Examples\OpenGL\Drawing&quot;;&quot;E:\Dans Documents\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0&quot;;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="&quot;E:\Program Files\Borland\CBuilder6\Examples\OpenGL\Drawing&quot;;&quot;E:\Dans Documents\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0&quot;;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <WARNINGS value="-w-par"/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <IDLCFLAGS value="-I&quot;E:\Program Files\Borland\CBuilder6\Examples\OpenGL\Drawing&quot; 
+      -I&quot;E:\Dans Documents\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0&quot; 
+      -I$(BCB)\include -I$(BCB)\include\vcl -src_suffix cpp -boa"/>
+    <CFLAG1 value="-O2 -H=$(BCB)\lib\vcl60.csm -Hc -w- -Vx -Ve -X- -a8 -b- -d -k- -vi -c -tW 
+      -tWM"/>
+    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn -w"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0w32.obj $(PACKAGES) Memmgr.Lib sysinit.obj $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mti.lib"/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="prjMouseWrap2.res" FORMNAME="" UNITNAME="prjMouseWrap2.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="prjMouseWrap2.cpp" FORMNAME="" UNITNAME="prjMouseWrap2" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="main.cpp" FORMNAME="frmMain" UNITNAME="main" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="mw2_move_recon.h" FORMNAME="" UNITNAME="mw2_move_recon.h" CONTAINERID="" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="mw2_move_recon.cpp" FORMNAME="" UNITNAME="mw2_move_recon" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="mw2_stats.cpp" FORMNAME="" UNITNAME="mw2_stats" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=1
+AutoIncBuild=0
+MajorVer=2
+MinorVer=0
+Release=4
+Build=0
+Debug=0
+PreRelease=0
+Special=0
+Private=0
+DLL=0
+Locale=2057
+CodePage=1252
+
+[Version Info Keys]
+CompanyName=Ex-D Software Development(tm)
+FileDescription=A small utility to enhance the mouse pointer mobility in a Windows environment.
+FileVersion=2.0.4.0
+InternalName=
+LegalCopyright=This program is freeware! Do not redistribute without permission from Ex-D Software Development(tm). 
+LegalTrademarks=Copyright 2000-2005 All rights reserved.
+OriginalFilename=mousewrap2.exe
+ProductName=Mouse Wrap(tm) 2
+ProductVersion=2.0.4.0
+Comments=
+
+[HistoryLists\hlIncludePath]
+Count=1
+Item0=E:\Program Files\Borland\CBuilder6\Examples\OpenGL\Drawing;E:\Dans Documents\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0;$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=1
+Item0=E:\Program Files\Borland\CBuilder6\Examples\OpenGL\Drawing;E:\Dans Documents\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0;$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=/ok1000
+Launcher=
+UseLauncher=0
+DebugCWD=
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteLauncher=
+RemoteCWD=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=0
+LinkCGLIB=0
+
+[CORBA]
+AddServerUnit=1
+AddClientUnit=1
+PrecompiledHeaders=1
+
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
+  </IDEOPTIONS>
+</PROJECT>
