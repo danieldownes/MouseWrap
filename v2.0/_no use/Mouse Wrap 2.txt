@@ -1,0 +1,13 @@
+New features::
+
+Ex-D Software Development(tm) have taken great attenton to customer comments, suggestions and needs, to bring you Mouse Wrap 2. Now in its second release, we hope that new and old customers will enjoy the benifits of combined ideas within a single product. 
+
+Pattern Movment Detection  -  Detects simple detective motions
+  -  Actions such as Copy/Paste can be set on detection
+  -  Currently two patterns can be detected, more soon if this feature becomes popularMouse Stats.
+  -  Mouse clicks today/since...
+  -  Total miles that mouse has been moved since...Speed, Size and Reliablity
+  -  Now loads-up faster  -  Size taken up by memory greatly reduced
+  -  Download file is much smaller
+  -  Adaptive memory usage; deselected features within the options will not be loaded into memory - this also reduces processor usage
+  -  Mouse Wrap 2 was created using better founded development tools, meaning greater reliablity, compatiblity and less memory usage as the final product
