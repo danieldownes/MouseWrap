@@ -1,0 +1,7 @@
+frmMain = 60, 77, 934, 705, , 238, 143, 914, 775, C
+modMouse = 102, 23, 792, 655, 
+modTaskBarIcon = 0, 0, 0, 0, C
+frmAbout = 199, 88, 875, 720, , 22, 24, 698, 656, C
+modScreenSize = 0, 0, 0, 0, C
+modRegistery = 151, 292, 827, 935, 
+modExVersionCheckInterface = 0, 0, 0, 0, C
