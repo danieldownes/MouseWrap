@@ -1,0 +1,20 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=help.chm
+Contents file=Table of Contents.hhc
+Default topic=Help\index.htm
+Display compile progress=No
+Language=0x809 English (United Kingdom)
+Title=Mouse Wrap 2 Help
+
+
+[FILES]
+Help\contact.htm
+Help\history.htm
+Help\index.htm
+Help\legal.htm
+Help\paturn_rec.htm
+Help\troubleshooting.htm
+
+[INFOTYPES]
+
