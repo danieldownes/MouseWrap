@@ -1,0 +1,21 @@
+c2b76d8f
+
+
+1584Kb
+
+v2.00
+
+June 13 2003
+
+http://www.ex-d.net/download-v2.asp?ProdID=23
+
+http://ex-d/products/utils/mousewrap/default.asp
+
+http://ex-d/products/utils/mousewrap/gfx_demo.gif
+
+
+Mouse Wrap is a small utility to enhance the mobility of the Windows mouse pointer. It does this by wrapping the pointer around the screen. If the pointer is moved to any edge of the screen, the pointer will appear at the opposite side of the screen; See the product's site for elaboration.
+
+It may take time to get used to the way in which you can now use your mouse, but once you realise how much quicker it is to get to things at the other side of the screen, you'll wonder how you managed without!
+
+mouse, wrap, around, screen, desktop, cursor, pointer, free
