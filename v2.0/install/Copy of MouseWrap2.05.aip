@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DOCUMENT type="Advanced Installer" CreateVersion="4.8.1" version="4.8.1" modules="professional" RootPath="." Language="en">
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
+    <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
+    <ROW Property="ARPNOMODIFY" Value="1"/>
+    <ROW Property="ARPPRODUCTICON" Value="controlPanelIcon.exe"/>
+    <ROW Property="ARPURLINFOABOUT" Value="http://www.Ex-D.net"/>
+    <ROW Property="ARPURLUPDATEINFO" Value="http://www.ex-d.net/products/check_version.asp?ID=3&amp;Ver=2.05"/>
+    <ROW Property="BannerBitmap" Value="default_banner.bmp" Type="1"/>
+    <ROW Property="DialogBitmap" Value="default_dialog.bmp" Type="1"/>
+    <ROW Property="LIMITUI" Value="1"/>
+    <ROW Property="Manufacturer" Value="Ex-D Software Development™" ValueLocId="*"/>
+    <ROW Property="ProductCode" Value="1033:{C5379183-86EC-4ABD-BFF0-A02AA6F01296} "/>
+    <ROW Property="ProductLanguage" Value="1033"/>
+    <ROW Property="ProductName" Value="Mouse Wrap 2" ValueLocId="*"/>
+    <ROW Property="ProductVersion" Value="2.5"/>
+    <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
+    <ROW Property="UpgradeCode" Value="{150324C1-CC90-4DFA-8A55-B8FEDD32D101}"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
+    <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1"/>
+    <ROW Directory="DesktopFolder" Directory_Parent="TARGETDIR" DefaultDir="Deskto~1|DesktopFolder" IsPseudoRoot="1"/>
+    <ROW Directory="Ex_D_Software_Development_DIR" Directory_Parent="ProgramMenuFolder" DefaultDir="Ex-DSo~1|Ex-D Software Development"/>
+    <ROW Directory="Mouse_Wrap_2_DIR" Directory_Parent="Ex_D_Software_Development_DIR" DefaultDir="MouseW~1|Mouse Wrap 2"/>
+    <ROW Directory="ProgramMenuFolder" Directory_Parent="TARGETDIR" DefaultDir="Progra~1|ProgramMenuFolder" IsPseudoRoot="1"/>
+    <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
+    <ROW Directory="SystemFolder" Directory_Parent="TARGETDIR" DefaultDir="System~1|SystemFolder" IsPseudoRoot="1"/>
+    <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
+    <ROW Directory="components_DIR" Directory_Parent="APPDIR" DefaultDir="compon~1|components"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
+    <ROW Component="Check_for_newer_version.url_1" ComponentId="{B0837D00-8DCA-4152-AE05-F041DA4427AB}" Directory_="Mouse_Wrap_2_DIR" Attributes="0" KeyPath="Check_for_newer_version.url" FullKeyPath="ProgramMenuFolder\Ex-D Software Development\Mouse Wrap 2"/>
+    <ROW Component="Ex_D_Software_Development_TM_Site.url" ComponentId="{87075DD8-5E44-431D-A2D7-746E24ACD375}" Directory_="Ex_D_Software_Development_DIR" Attributes="0" KeyPath="Ex_D_Software_Development_TM_Site.url" FullKeyPath="ProgramMenuFolder\Ex-D Software Development"/>
+    <ROW Component="HoriRecog" ComponentId="{840611F1-94E0-45D7-A91D-18287664015C}" Directory_="APPDIR" Attributes="4" KeyPath="HoriRecog" FullKeyPath="HK_CU\Software\Ex-D Software DevelopmentTM\[ProductName]\HoriRecog"/>
+    <ROW Component="Misc" ComponentId="{0869D85B-E5AD-4563-8751-FBBC1EAF8970}" Directory_="APPDIR" Attributes="4" KeyPath="Misc" FullKeyPath="HK_CU\Software\Ex-D Software DevelopmentTM\[ProductName]\Misc"/>
+    <ROW Component="MouseWrap2" ComponentId="{94A92A06-344F-4ACE-9521-A3755556809D}" Directory_="APPDIR" Attributes="4" KeyPath="MouseWrap2" FullKeyPath="HK_CU\Software\Microsoft\Windows\CurrentVersion\Run\MouseWrap2"/>
+    <ROW Component="MouseWrap2.exe" ComponentId="{D3D73408-B578-4A90-AD24-1E9FFF44CAAD}" Directory_="components_DIR" Attributes="0" KeyPath="MouseWrap2.exe" FullKeyPath="APPDIR\components\MouseWrap2.exe"/>
+    <ROW Component="MouseWrap2Recog.exe" ComponentId="{49B7286B-1B6A-4710-AACC-C47FB225BE9D}" Directory_="components_DIR" Attributes="0" KeyPath="MouseWrap2Recog.exe" FullKeyPath="APPDIR\components\MouseWrap2Recog.exe"/>
+    <ROW Component="MouseWrap2StartUp.exe" ComponentId="{1B1B758A-5B3B-45FD-8D9B-54ADC52A1645}" Directory_="APPDIR" Attributes="0" KeyPath="MouseWrap2StartUp.exe" FullKeyPath="APPDIR\MouseWrap2StartUp.exe"/>
+    <ROW Component="OnStartUp" ComponentId="{F1AB2798-40ED-497D-92A9-0C08FE1D67D9}" Directory_="APPDIR" Attributes="4" KeyPath="OnStartUp" FullKeyPath="HK_CU\Software\Ex-D Software DevelopmentTM\[ProductName]\OnStartUp"/>
+    <ROW Component="RecogActive" ComponentId="{C4202623-2F97-40C0-9E73-E945B77C3C6B}" Directory_="APPDIR" Attributes="4" KeyPath="RecogActive" FullKeyPath="HK_CU\Software\Ex-D Software DevelopmentTM\[ProductName]\RecogActive"/>
+    <ROW Component="RecogTimeout" ComponentId="{413A1681-2823-4BDB-B6CB-9412655B835F}" Directory_="APPDIR" Attributes="4" KeyPath="RecogTimeout" FullKeyPath="HK_CU\Software\Ex-D Software DevelopmentTM\[ProductName]\RecogTimeout"/>
+    <ROW Component="Remind" ComponentId="{7314CE7D-2ED1-47F5-B418-4F818FDE8051}" Directory_="APPDIR" Attributes="4" KeyPath="Remind" FullKeyPath="HK_CU\Software\Ex-D Software DevelopmentTM\[ProductName]\Remind"/>
+    <ROW Component="SHORTCUTDIR" ComponentId="{967B47C9-44E8-48C2-B75A-C54505D7D292}" Directory_="SHORTCUTDIR" Attributes="0"/>
+    <ROW Component="VertRecog" ComponentId="{A089A082-51F3-46CC-B102-81F5F1E2973D}" Directory_="APPDIR" Attributes="4" KeyPath="VertRecog" FullKeyPath="HK_CU\Software\Ex-D Software DevelopmentTM\[ProductName]\VertRecog"/>
+    <ROW Component="help.chm" ComponentId="{464154DE-1532-458C-A164-DF03C14C0587}" Directory_="components_DIR" Attributes="0" KeyPath="help.chm" FullKeyPath="APPDIR\components\help.chm"/>
+    <ROW Component="options.exe" ComponentId="{3BBD3426-5075-4FE4-A152-F45BA39630D3}" Directory_="components_DIR" Attributes="0" KeyPath="options.exe" FullKeyPath="APPDIR\components\options.exe"/>
+    <ROW Component="vclx60.bpl" ComponentId="{DA938B99-F3E0-4EBD-9870-DE199F76A7F9}" Directory_="SystemFolder" Attributes="0" KeyPath="vclx60.bpl" FullKeyPath="SystemFolder"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="help.chm MouseWrap2.exe MouseWrap2Recog.exe options.exe MouseWrap2StartUp.exe SHORTCUTDIR Check_for_newer_version.url_1 Ex_D_Software_Development_TM_Site.url MouseWrap2 HoriRecog Misc OnStartUp RecogActive RecogTimeout Remind VertRecog vclx60.bpl"/>
+    <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
+    <ROW File="Check_for_newer_version.url" Component_="Check_for_newer_version.url_1" FileName="Checkf~1.url|Check for newer version.url" Attributes="0" SourcePath="..\..\..\_dd\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\package\Check for newer version.url" SelfReg="false" Sequence="1"/>
+    <ROW File="Ex_D_Software_Development_TM_Site.url" Component_="Ex_D_Software_Development_TM_Site.url" FileName="Ex-DSo~1.url|Ex-D Software Development(TM) Site.url" Attributes="0" SourcePath="..\..\..\_dd\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\package\Ex-D Software Development(TM) Site.url" SelfReg="false" Sequence="6"/>
+    <ROW File="MouseWrap2.exe" Component_="MouseWrap2.exe" FileName="MouseW~1.exe|MouseWrap2.exe" Attributes="0" SourcePath="..\..\..\_dd\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\package\components\MouseWrap2.exe" SelfReg="false" Sequence="3"/>
+    <ROW File="MouseWrap2Recog.exe" Component_="MouseWrap2Recog.exe" FileName="MouseW~2.exe|MouseWrap2Recog.exe" Attributes="0" SourcePath="..\..\..\_dd\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\package\components\MouseWrap2Recog.exe" SelfReg="false" Sequence="4"/>
+    <ROW File="MouseWrap2StartUp.exe" Component_="MouseWrap2StartUp.exe" FileName="MouseW~1.exe|MouseWrap2StartUp.exe" Attributes="0" SourcePath="..\..\..\_dd\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\package\MouseWrap2StartUp.exe" SelfReg="false" Sequence="7"/>
+    <ROW File="help.chm" Component_="help.chm" FileName="help.chm" Attributes="0" SourcePath="..\..\..\_dd\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\package\components\help.chm" SelfReg="false" Sequence="2"/>
+    <ROW File="options.exe" Component_="options.exe" FileName="options.exe" Attributes="0" SourcePath="..\..\..\_dd\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\package\components\options.exe" SelfReg="false" Sequence="5"/>
+    <ROW File="rtl60.bpl" Component_="vclx60.bpl" FileName="rtl60.bpl" Attributes="0" SourcePath="..\..\..\WINDOWS\system32\rtl60.bpl" SelfReg="false" Sequence="10"/>
+    <ROW File="vcl60.bpl" Component_="vclx60.bpl" FileName="vcl60.bpl" Attributes="0" SourcePath="..\..\..\WINDOWS\system32\vcl60.bpl" SelfReg="false" Sequence="9"/>
+    <ROW File="vclx60.bpl" Component_="vclx60.bpl" FileName="vclx60.bpl" Attributes="0" SourcePath="..\..\..\WINDOWS\system32\vclx60.bpl" SelfReg="false" Sequence="8"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
+    <ROW Path="&lt;ui.ail&gt;"/>
+    <ROW Path="&lt;ui_en.ail&gt;"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
+    <ROW Fragment="FolderDlg.aip" Path="&lt;FolderDlg.aip&gt;"/>
+    <ROW Fragment="StaticUIStrings.aip" Path="&lt;StaticUIStrings.aip&gt;"/>
+    <ROW Fragment="UI.aip" Path="&lt;UI.aip&gt;"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
+    <ROW Name="aicustact.dll" SourcePath="&lt;aicustact.dll&gt;"/>
+    <ROW Name="default_banner.bmp" SourcePath="&lt;default-banner.bmp&gt;"/>
+    <ROW Name="default_dialog.bmp" SourcePath="&lt;default-dialog.bmp&gt;"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlComponent">
+    <ATTRIBUTE name="FixedSizeBitmaps" value="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlEventComponent">
+    <ROW Dialog_="FolderDlg" Control_="Back" Event="NewDialog" Argument="WelcomeDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="WelcomeDlg" Control_="Next" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="FolderDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_INSTALL" Ordering="3"/>
+    <ROW Dialog_="MaintenanceTypeDlg" Control_="Back" Event="NewDialog" Argument="MaintenanceWelcomeDlg" Condition="AI_MAINT" Ordering="1"/>
+    <ROW Dialog_="MaintenanceWelcomeDlg" Control_="Next" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT" Ordering="2"/>
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="PatchWelcomeDlg" Condition="AI_PATCH" Ordering="1"/>
+    <ROW Dialog_="PatchWelcomeDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_PATCH" Ordering="3"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCreateFolderComponent">
+    <ROW Directory_="SHORTCUTDIR" Component_="SHORTCUTDIR"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
+    <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
+    <ROW Action="AI_PREPARE_UPGRADE" Type="1" Source="aicustact.dll" Target="PrepareUpgrade"/>
+    <ROW Action="AI_RESTORE_LOCATION" Type="1" Source="aicustact.dll" Target="RestoreLocation"/>
+    <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]"/>
+    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder]Ex-D Software Development\[ProductName]"/>
+    <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]"/>
+    <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiIconsComponent">
+    <ROW Name="SystemFolder_msiexec.exe" SourcePath="&lt;uninstall.ico&gt;" Index="0"/>
+    <ROW Name="controlPanelIcon.exe" SourcePath="..\..\..\_dd\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\package\MouseWrap2StartUp.exe" Index="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
+    <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210"/>
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="740"/>
+    <ROW Action="AI_STORE_LOCATION" Condition="Not Installed" Sequence="1545"/>
+    <ROW Action="AI_PREPARE_UPGRADE" Condition="AI_UPGRADE=&quot;No&quot; AND (Not Installed)" Sequence="1300"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="740"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiMediaComponent">
+    <ATTRIBUTE name="CabsLocation" value="0"/>
+    <ATTRIBUTE name="Compress" value="1"/>
+    <ATTRIBUTE name="InstallationType" value="4"/>
+    <ATTRIBUTE name="Package" value="1"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiRegsComponent">
+    <ROW Registry="HoriRecog" Root="1" Key="Software\Ex-D Software DevelopmentTM\[ProductName]" Name="HoriRecog" Value="5" Component_="HoriRecog"/>
+    <ROW Registry="Misc" Root="1" Key="Software\Ex-D Software DevelopmentTM\[ProductName]" Name="Misc" Value="0" Component_="Misc"/>
+    <ROW Registry="MouseWrap2" Root="1" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="MouseWrap2" Value="[APPDIR][~][APPDIR]\[#MouseWrap2StartUp.exe] /start" Component_="MouseWrap2"/>
+    <ROW Registry="OnStartUp" Root="1" Key="Software\Ex-D Software DevelopmentTM\[ProductName]" Name="OnStartUp" Value="1" Component_="OnStartUp"/>
+    <ROW Registry="RecogActive" Root="1" Key="Software\Ex-D Software DevelopmentTM\[ProductName]" Name="RecogActive" Value="0" Component_="RecogActive"/>
+    <ROW Registry="RecogTimeout" Root="1" Key="Software\Ex-D Software DevelopmentTM\[ProductName]" Name="RecogTimeout" Value="200" Component_="RecogTimeout"/>
+    <ROW Registry="Remind" Root="1" Key="Software\Ex-D Software DevelopmentTM\[ProductName]" Name="Remind" Value="0" Component_="Remind"/>
+    <ROW Registry="VertRecog" Root="1" Key="Software\Ex-D Software DevelopmentTM\[ProductName]" Name="VertRecog" Value="4" Component_="VertRecog"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiShortsComponent">
+    <ROW Shortcut="Help" Directory_="Mouse_Wrap_2_DIR" Name="Help" Component_="help.chm" Target="[#help.chm]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="components_DIR"/>
+    <ROW Shortcut="MouseWrap2StartUp.exe" Directory_="SHORTCUTDIR" Name="MouseW~1|Mouse Wrap 2" Component_="MouseWrap2StartUp.exe" Target="[#MouseWrap2StartUp.exe]" Description="MouseWrap2StartUp.exe" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
+    <ROW Shortcut="Mouse_Wrap_2" Directory_="Mouse_Wrap_2_DIR" Name="MouseW~1|Mouse Wrap 2" Component_="MouseWrap2StartUp.exe" Target="[#MouseWrap2StartUp.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
+    <ROW Shortcut="Mouse_Wrap_2_1" Directory_="DesktopFolder" Name="MouseW~1|Mouse Wrap 2" Component_="MouseWrap2StartUp.exe" Target="[#MouseWrap2StartUp.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
+    <ROW Shortcut="Uninstall" Directory_="Mouse_Wrap_2_DIR" Name="Uninst~1|Uninstall" Component_="SHORTCUTDIR" Target="[SystemFolder]msiexec.exe" Arguments="/x [ProductCode]" Hotkey="0" Icon_="SystemFolder_msiexec.exe" IconIndex="0" ShowCmd="1"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiUpgradeComponent">
+    <ROW UpgradeCode="UpgradeCode" VersionMax="ProductVersion" Attributes="1025"/>
+    <ROW UpgradeCode="UpgradeCode" VersionMin="ProductVersion" Attributes="2"/>
+  </COMPONENT>
+</DOCUMENT>
