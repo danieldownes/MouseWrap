@@ -1,0 +1,135 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="MouseWrap3StartUp.exe"/>
+    <OBJFILES value="MouseWrap3StartUp.obj Unit1.obj frmLoader_Window.obj"/>
+    <RESFILES value="MouseWrap3StartUp.res"/>
+    <IDLFILES value=""/>
+    <IDLGENFILES value=""/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) Unit1.dfm frmLoader_Window.dfm"/>
+    <LIBFILES value=""/>
+    <LIBRARIES value=""/>
+    <SPARELIBS value="vcl.lib rtl.lib"/>
+    <PACKAGES value="vcl.bpi rtl.bpi dbrtl.bpi adortl.bpi vcldb.bpi vclx.bpi bdertl.bpi 
+      vcldbx.bpi ibxpress.bpi dsnap.bpi cds.bpi bdecds.bpi qrpt.bpi teeui.bpi 
+      teedb.bpi tee.bpi dss.bpi teeqr.bpi visualclx.bpi visualdbclx.bpi 
+      dsnapcrba.bpi dsnapcon.bpi bcbsmp.bpi vclie.bpi xmlrtl.bpi inet.bpi 
+      inetdbbde.bpi inetdbxpress.bpi inetdb.bpi nmfast.bpi webdsnap.bpi 
+      bcbie.bpi websnap.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi 
+      indy.bpi bcb2kaxserver.bpi"/>
+    <PATHCPP value=".;"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value=""/>
+    <SYSDEFINES value="NO_STRICT;_RTLDLL;USEPACKAGES"/>
+    <MAINSOURCE value="MouseWrap3StartUp.cpp"/>
+    <INCLUDEPATH value="&quot;E:\Program Files\Borland\CBuilder6\Projects&quot;;C:\_dd\Business\QDwares\Projects\MouseWrap_v3\code\startup;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="&quot;E:\Program Files\Borland\CBuilder6\Projects&quot;;C:\_dd\Business\QDwares\Projects\MouseWrap_v3\code\startup;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <WARNINGS value="-w-par"/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <IDLCFLAGS value="-I&quot;E:\Program Files\Borland\CBuilder6\Projects&quot; 
+      -IC:\_dd\Business\QDwares\Projects\MouseWrap_v3\code\startup 
+      -I$(BCB)\include -I$(BCB)\include\vcl -src_suffix cpp -boa"/>
+    <CFLAG1 value="-Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -a8 -b- -k- -vi -c -tW -tWM"/>
+    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0w32.obj $(PACKAGES) Memmgr.Lib sysinit.obj $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mti.lib"/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="MouseWrap3StartUp.res" FORMNAME="" UNITNAME="MouseWrap3StartUp.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="MouseWrap3StartUp.cpp" FORMNAME="" UNITNAME="MouseWrap3StartUp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="Unit1.cpp" FORMNAME="frmMain" UNITNAME="Unit1" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="frmLoader_Window.cpp" FORMNAME="frmLoader" UNITNAME="frmLoader_Window" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=1
+AutoIncBuild=0
+MajorVer=3
+MinorVer=0
+Release=0
+Build=0
+Debug=0
+PreRelease=0
+Special=0
+Private=0
+DLL=0
+Locale=2057
+CodePage=1252
+
+[Version Info Keys]
+CompanyName=QDwares
+FileDescription=A small utility to enhance the mouse pointer mobility in a Windows environment.
+FileVersion=3.0.0.0
+InternalName=
+LegalCopyright=This program is freeware! Do not redistribute without permission from Ex-D Software Development(tm). 
+LegalTrademarks=Copyright 1999-2009 All rights reserved.
+OriginalFilename=mousewrap3.exe
+ProductName=Mouse Wrap(tm) 3
+ProductVersion=3.00
+Comments=
+
+[HistoryLists\hlIncludePath]
+Count=2
+Item0=E:\Program Files\Borland\CBuilder6\Projects;C:\_dd\Business\QDwares\Projects\MouseWrap_v3\code\startup;$(BCB)\include;$(BCB)\include\vcl
+Item1=E:\Program Files\Borland\CBuilder6\Projects;E:\Dans Documents\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\code\startup;$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=2
+Item0=E:\Program Files\Borland\CBuilder6\Projects;C:\_dd\Business\QDwares\Projects\MouseWrap_v3\code\startup;$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=
+Launcher=
+UseLauncher=0
+DebugCWD=
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteLauncher=
+RemoteCWD=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=1
+LinkCGLIB=0
+
+[CORBA]
+AddServerUnit=1
+AddClientUnit=1
+PrecompiledHeaders=1
+
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
+  </IDEOPTIONS>
+</PROJECT>
