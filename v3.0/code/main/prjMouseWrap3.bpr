@@ -66,7 +66,7 @@
 IncludeVerInfo=1
 AutoIncBuild=0
 MajorVer=3
-MinorVer=0
+MinorVer=3
 Release=0
 Build=0
 Debug=0
@@ -78,15 +78,15 @@ Locale=2057
 CodePage=1252
 
 [Version Info Keys]
-CompanyName=QDwares
+CompanyName=QD Studios
 FileDescription=A small utility to enhance the mouse pointer mobility in a Windows environment.
-FileVersion=3.0.0.0
+FileVersion=3.3.0.0
 InternalName=
-LegalCopyright=This program is freeware! Do not redistribute without permission from Ex-D Software Development(tm). 
-LegalTrademarks=Copyright 2000-2009 All rights reserved.
+LegalCopyright=This program is freeware! Do not redistribute without permission from QD Studios
+LegalTrademarks=Copyright 2000-2013 All rights reserved.
 OriginalFilename=mousewrap3.exe
 ProductName=Mouse Wrap(tm) 3
-ProductVersion=3.00
+ProductVersion=3.3
 Comments=
 
 [HistoryLists\hlIncludePath]
