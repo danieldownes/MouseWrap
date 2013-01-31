@@ -3,8 +3,8 @@ object frmMain: TfrmMain
   Top = 145
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
-  Caption = 'Donate to keep Mouse Wrap 3 alive'
-  ClientHeight = 216
+  Caption = 'Please support Mouse Wrap...'
+  ClientHeight = 246
   ClientWidth = 329
   Color = 5393221
   DefaultMonitor = dmPrimary
@@ -296,7 +296,7 @@ object frmMain: TfrmMain
   TextHeight = 13
   object pp: TImage
     Left = 133
-    Top = 138
+    Top = 162
     Width = 64
     Height = 41
     Picture.Data = {
@@ -401,7 +401,7 @@ object frmMain: TfrmMain
   end
   object cc: TImage
     Left = 93
-    Top = 186
+    Top = 218
     Width = 140
     Height = 28
     Picture.Data = {
@@ -519,10 +519,10 @@ object frmMain: TfrmMain
     OnClick = ppClick
   end
   object lblMsg: TMemo
-    Left = 8
-    Top = 8
+    Left = 10
+    Top = 1
     Width = 313
-    Height = 126
+    Height = 161
     Cursor = crArrow
     BevelEdges = [beTop]
     BevelInner = bvNone
@@ -537,20 +537,23 @@ object frmMain: TfrmMain
     Lines.Strings = (
       'Please donate if you use this software regually to support '
       'Mouse Wrap; Donations help keep the developer motived and '
-      'helps pay the QDwares website service fees.'
+      'helps pay the QD Studios website service fees.'
       ''
       'Once a donation has been made, you will no longer see this '
       'message; A registration code will be Emailed to you.'
       ''
       'Donations can be made using the renowned, SSL secured, '
-      'PayPal service and can be made without signing up to PayPal.')
+      'PayPal service and can be made without signing up to PayPal.'
+      ''
+      'Thanks for using Mouse Wrap. Please spread the word.'
+      ' ~ Daniel. The one man operation that is QD Studios.')
     ParentCtl3D = False
     ParentFont = False
     TabOrder = 0
   end
   object txtCode: TEdit
-    Left = 8
-    Top = 160
+    Left = 9
+    Top = 193
     Width = 217
     Height = 21
     TabOrder = 4
@@ -558,7 +561,7 @@ object frmMain: TfrmMain
   end
   object cmdLater: TButton
     Left = 16
-    Top = 160
+    Top = 192
     Width = 73
     Height = 25
     Cancel = True
@@ -568,7 +571,7 @@ object frmMain: TfrmMain
   end
   object cmdNow: TButton
     Left = 128
-    Top = 160
+    Top = 192
     Width = 73
     Height = 25
     Caption = '&Donate'
@@ -578,7 +581,7 @@ object frmMain: TfrmMain
   end
   object cmdCode: TButton
     Left = 240
-    Top = 160
+    Top = 192
     Width = 73
     Height = 25
     Caption = 'Enter &Code'
