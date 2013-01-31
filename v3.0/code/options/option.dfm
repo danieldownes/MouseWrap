@@ -1,12 +1,13 @@
 object frmOptions: TfrmOptions
   Left = 157
   Top = 181
-  Width = 257
-  Height = 118
   HorzScrollBar.Visible = False
   VertScrollBar.Visible = False
   BorderIcons = [biSystemMenu]
+  BorderStyle = bsDialog
   Caption = 'Mouse Wrap 3 : Options'
+  ClientHeight = 97
+  ClientWidth = 217
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -296,14 +297,14 @@ object frmOptions: TfrmOptions
   object GroupBox1: TGroupBox
     Left = 8
     Top = 8
-    Width = 233
+    Width = 201
     Height = 45
     Caption = 'General'
     TabOrder = 0
     object chkStartupLoad: TCheckBox
       Left = 16
       Top = 20
-      Width = 201
+      Width = 153
       Height = 17
       Caption = 'Load on &Startup'
       TabOrder = 0
@@ -317,86 +318,6 @@ object frmOptions: TfrmOptions
       TabOrder = 1
     end
   end
-  object GroupBox2: TGroupBox
-    Left = 8
-    Top = 96
-    Width = 233
-    Height = 161
-    Caption = 'Pattern Recognition'
-    TabOrder = 1
-    object Label1: TLabel
-      Left = 13
-      Top = 130
-      Width = 85
-      Height = 13
-      Caption = 'Timeout (m/secs):'
-    end
-    object Label2: TLabel
-      Left = 20
-      Top = 94
-      Width = 103
-      Height = 13
-      Caption = 'Action on recognition:'
-    end
-    object Label3: TLabel
-      Left = 20
-      Top = 44
-      Width = 103
-      Height = 13
-      Caption = 'Action on recognition:'
-    end
-    object Label4: TLabel
-      Left = 8
-      Top = 72
-      Width = 149
-      Height = 13
-      Caption = 'Back and Forth &Vertical Motion:'
-    end
-    object Label5: TLabel
-      Left = 8
-      Top = 21
-      Width = 161
-      Height = 13
-      Caption = 'Back and Forth &Horizontal Motion:'
-    end
-    object sclRecogTimeout: TUpDown
-      Left = 145
-      Top = 128
-      Width = 13
-      Height = 21
-      Min = -32768
-      Max = 32767
-      Position = 0
-      TabOrder = 0
-      Wrap = False
-    end
-    object txtRecogTimeout: TEdit
-      Left = 104
-      Top = 128
-      Width = 41
-      Height = 21
-      TabOrder = 1
-      Text = '200'
-    end
-    object lstHorizontal: TComboBox
-      Left = 128
-      Top = 42
-      Width = 97
-      Height = 21
-      Style = csDropDownList
-      ItemHeight = 13
-      TabOrder = 2
-    end
-    object lstVertical: TComboBox
-      Left = 128
-      Top = 92
-      Width = 97
-      Height = 21
-      Style = csDropDownList
-      ItemHeight = 13
-      TabOrder = 3
-    end
-  end
   object Button1: TButton
     Left = 24
     Top = 64
@@ -404,7 +325,7 @@ object frmOptions: TfrmOptions
     Height = 25
     Caption = '&Ok'
     Default = True
-    TabOrder = 2
+    TabOrder = 1
     OnClick = Button1Click
   end
   object Button2: TButton
@@ -414,7 +335,7 @@ object frmOptions: TfrmOptions
     Height = 25
     Cancel = True
     Caption = '&Cancel'
-    TabOrder = 3
+    TabOrder = 2
     OnClick = Button2Click
   end
 end
