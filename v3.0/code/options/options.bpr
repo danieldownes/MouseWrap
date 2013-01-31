@@ -39,7 +39,8 @@
     <IDLCFLAGS value="-I&quot;E:\Program Files\Borland\CBuilder6\Projects&quot; 
       -I&quot;E:\Dans Documents\Ex-D\Software Development\Projects\Utilities\MouseWrap\v2.0\code\options&quot; 
       -I$(BCB)\include -I$(BCB)\include\vcl -src_suffix cpp -D_DEBUG -boa"/>
-    <CFLAG1 value="-Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -r- -a8 -b- -k -vi -c -tW -tWM"/>
+    <CFLAG1 value="-O2 -H=$(BCB)\lib\vcl60.csm -Hc -w- -Vx -Ve -X- -r- -a8 -b- -k -vi -c -tW 
+      -tWM"/>
     <PFLAGS value="-$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
     <RFLAGS value=""/>
     <AFLAGS value="/mx /w2 /zi"/>
@@ -65,7 +66,7 @@
 IncludeVerInfo=1
 AutoIncBuild=0
 MajorVer=3
-MinorVer=1
+MinorVer=3
 Release=0
 Build=0
 Debug=0
@@ -77,16 +78,19 @@ Locale=2057
 CodePage=1252
 
 [Version Info Keys]
-CompanyName=QDwares
+CompanyName=QD Studios
 FileDescription=
-FileVersion=3.1.0.0
+FileVersion=3.3.0.0
 InternalName=
 LegalCopyright=
 LegalTrademarks=
 OriginalFilename=
 ProductName=
-ProductVersion=1.0.0.0
+ProductVersion=3.3
 Comments=
+
+[Excluded Packages]
+c:\program files\borland\cbuilder6\Bin\dclite60.bpl=Borland Integrated Translation Environment
 
 [Debugging]
 DebugSourceDirs=$(BCB)\source\vcl
@@ -112,10 +116,5 @@ LinkCGLIB=0
 AddServerUnit=1
 AddClientUnit=1
 PrecompiledHeaders=1
-
-[Language]
-ActiveLang=
-ProjectLang=
-RootDir=
   </IDEOPTIONS>
 </PROJECT>
