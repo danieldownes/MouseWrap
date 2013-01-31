@@ -53,7 +53,7 @@ char *ReadReg(char *sKey)
 	 * key in the EventLog service portion of the registry.
 	 */
 
-	if(RegCreateKey(HKEY_CURRENT_USER, "Software\\QDwares\\MouseWrap3",&hk))
+	if(RegCreateKey(HKEY_CURRENT_USER, "Software\\QDStudios\\MouseWrap3",&hk))
 		Application->MessageBox("could not open registry key","Mouse Wrap 3 - Error: RegRead");
 
 
