@@ -1,7 +1,7 @@
 [DEFAULT]
-BASEURL=http://localhost/ex-d/
+BASEURL=http://www.qdstudios.com/
 [InternetShortcut]
-URL=http://www.qdwares.com/mousewrap/index.php?v=3.00
+URL=http://www.qdstudios.com/mousewrap/index.php?v=3.3
 Modified=202887F9A090C701C0
 HotKey=0
 IDList=
