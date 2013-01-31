@@ -17,18 +17,8 @@ __published:	// IDE-managed Components
 	TGroupBox *GroupBox1;
 	TCheckBox *chkStartupLoad;
 	TCheckBox *chkRecogActive;
-	TGroupBox *GroupBox2;
 	TButton *Button1;
 	TButton *Button2;
-	TUpDown *sclRecogTimeout;
-	TEdit *txtRecogTimeout;
-	TLabel *Label1;
-	TLabel *Label2;
-	TLabel *Label3;
-	TComboBox *lstHorizontal;
-	TComboBox *lstVertical;
-	TLabel *Label4;
-	TLabel *Label5;
 	void __fastcall FormCreate(TObject *Sender);
 	void __fastcall Button1Click(TObject *Sender);
 //	void __fastcall sclRecogTimeoutClick(TObject *Sender, TUDBtnType Button);
