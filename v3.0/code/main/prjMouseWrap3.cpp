@@ -28,7 +28,7 @@ WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmd, int)
             if(hInstanceMutex)
                 CloseHandle(hInstanceMutex);
 
-            Application->MessageBoxA("Mouse Wrap 3 is already running.","Mouse Wrap 3 : QDwares",0);
+            Application->MessageBoxA("Mouse Wrap 3 is already running.","Mouse Wrap 3 : QD Studios",0);
             exit(0);
         }
 
@@ -44,7 +44,7 @@ WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmd, int)
                  // User can not run directly, must be run from 'startup'
                  if(StrLIComp(cmd, "/ok", 3))
                  {
-                        Application->MessageBox("Can not be run directly, please use 'MouseWrap3StartUp.exe'.", "Mouse Wrap 3 component",0);
+                        Application->MessageBox("Can not be run directly, please use 'MouseWrap3StartUp.exe'.", "Mouse Wrap 3",0);
                         exit(0);
                  }
 
