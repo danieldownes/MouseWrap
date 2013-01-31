@@ -31,29 +31,12 @@ void __fastcall TfrmMain::FormCreate(TObject *Sender)
 
         AnsiString sTemp;
 
-        Application->Title = "MouseWrap2Start";
+        Application->Title = "MouseWrap 3 Starting";
 
       	GetBaseDirectory(strT,sizeof(strT));
 
-        /*
-        sTemp = ReadReg("RecogActive");
-
-        if(sTemp == "1")
-        {
-                strcat(strT, "components\\MouseWrap2Recog.exe");
-
-                sTemp = "/ok";
-                sTemp = sTemp + ReadReg("RecogTimeout");
-
-                ShellExecute(0, "open", strT, sTemp.c_str(), NULL, SW_NORMAL);
-        }
-        else
-        {
-        */
-                strcat(strT, "components\\MouseWrap3.exe");
-                ShellExecute(0, "open", strT, "/ok", NULL, SW_NORMAL);
-        //}
-
+        strcat(strT, "components\\MouseWrap3.exe");
+        ShellExecute(0, "open", strT, "/ok", NULL, SW_NORMAL);
 
         strcpy(strT, ReadReg("Misc"));
         sTemp = strT;
@@ -92,7 +75,7 @@ void WriteReg(char *sKey, char *sValue)
 	 */
 
 	//if (
-        RegCreateKey(HKEY_CURRENT_USER, "Software\\QDwares\\MouseWrap3",&hk); //)
+        RegCreateKey(HKEY_CURRENT_USER, "Software\\QDStudios\\MouseWrap3",&hk); //)
         //        Application->MessageBox("could not create registry key","Mouse Wrap 3 - Error: WriteReg");
 
 
@@ -164,7 +147,7 @@ bool TryCode(int iX)
 
 void OpenDonatePage()
 {
-        ShellExecute(0, "open", "http://www.qdwares.com/mousewrap/donate.php", NULL, NULL, SW_SHOWMAXIMIZED);
+        ShellExecute(0, "open", "http://www.qdstudios.com/mousewrap/donate.php", NULL, NULL, SW_SHOWMAXIMIZED);
         exit(0);
 }
 
@@ -182,4 +165,5 @@ void __fastcall TfrmMain::ppClick(TObject *Sender)
         OpenDonatePage();
 }
 //---------------------------------------------------------------------------
+
 
