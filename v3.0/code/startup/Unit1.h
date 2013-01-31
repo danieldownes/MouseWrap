@@ -47,7 +47,7 @@ char *ReadReg(char *sKey)
 	 */
 
 	//if(
-        RegCreateKey(HKEY_CURRENT_USER, "Software\\QDwares\\MouseWrap3",&hk);
+        RegCreateKey(HKEY_CURRENT_USER, "Software\\QDStudios\\MouseWrap3",&hk);
         //)
 	//	Application->MessageBox("could not open registry key","Mouse Wrap 3 - Error: RegRead");
 
@@ -66,7 +66,7 @@ char *ReadReg(char *sKey)
 
 	RegCloseKey(hk);
 
-//	Application->MessageBoxA(szBuf,"Mouse Wrap 2 - Error: RegRead");
+//	Application->MessageBoxA(szBuf,"Mouse Wrap 3 - Error: RegRead");
 
 	return szBuf;
 }
