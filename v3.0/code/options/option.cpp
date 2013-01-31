@@ -51,7 +51,7 @@ void __fastcall TfrmOptions::FormCreate(TObject *Sender)
 	chkStartupLoad->Checked = temp.ToInt();
 
         /*
-	temp = ReadReg("RecogActive");                                          // Pattern Recognition setting
+	temp = ReadReg("RecogActive");                      // Pattern Recognition setting
 	chkRecogActive->Checked = StrToInt(temp);
 
 	temp = ReadReg("HoriRecog");						// Horizontal action
@@ -127,7 +127,7 @@ void WriteReg(char *sKey, char *sValue)
 	 * key in the EventLog service portion of the registry.
 	 */
 
-	if (RegCreateKey(HKEY_CURRENT_USER, "Software\\QDwares\\MouseWrap3",&hk))
+	if (RegCreateKey(HKEY_CURRENT_USER, "Software\\QDStudios\\MouseWrap3",&hk))
 		Application->MessageBox("could not create registry key","Mouse Wrap 3 - Error: WriteRead");
 
 
@@ -162,7 +162,7 @@ char *ReadReg(char *sKey)
 	 * key in the EventLog service portion of the registry.
 	 */
 
-	if(RegCreateKey(HKEY_CURRENT_USER, "Software\\QDwares\\MouseWrap3",&hk))
+	if(RegCreateKey(HKEY_CURRENT_USER, "Software\\QDStudios\\MouseWrap3",&hk))
 		Application->MessageBox("could not open registry key","Mouse Wrap 3 - Error: RegRead");
 
 
