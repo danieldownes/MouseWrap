@@ -4,8 +4,8 @@ object frmMain: TfrmMain
   BorderIcons = []
   BorderStyle = bsToolWindow
   Caption = 'MouseWrap3'
-  ClientHeight = 211
-  ClientWidth = 110
+  ClientHeight = 36
+  ClientWidth = 144
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -24,7 +24,7 @@ object frmMain: TfrmMain
     OnTimer = timControlTimer
   end
   object TrayIcon: TTrayIcon
-    Hint = 'On : Mouse Wrap 3 : QDwares'
+    Hint = 'On : Mouse Wrap 3 : QD Studios'
     PopupMenu = PopupMenu
     Hide = True
     RestoreOn = imDoubleClick
@@ -35,23 +35,24 @@ object frmMain: TfrmMain
   end
   object PopupMenu: TPopupMenu
     Left = 40
+    object mnuHelpAbout: TMenuItem
+      Caption = '&About Mouse Wrap v3.3'
+      OnClick = mnuHelpAboutClick
+    end
     object mnuMouseWrapHome: TMenuItem
-      Caption = 'Mouse Wrap &Homepage'
+      Caption = '&Check for new version'
       OnClick = mnuMouseWrapHomeClick
     end
     object mnuOptons: TMenuItem
       Caption = '&Options'
       OnClick = mnuOptonsClick
     end
-    object mnuHelpAbout: TMenuItem
-      Caption = '&About'
-      OnClick = mnuHelpAboutClick
-    end
     object mnuSep1: TMenuItem
       Caption = '-'
     end
     object mnuTurn: TMenuItem
       Caption = '&Turn OFF'
+      Default = True
       OnClick = mnuTurnClick
     end
     object mnuSep2: TMenuItem
