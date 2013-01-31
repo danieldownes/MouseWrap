@@ -52,10 +52,6 @@ void __fastcall TfrmMain::FormCreate(TObject *Sender)
 
         AnsiString sTemp;
 
-
-
-
-
 	TrayIcon->Visible = TRUE;
 //        frmMain->WindowState = wsMinimized;
         frmMain->Left = -2300;
@@ -433,7 +429,7 @@ void __fastcall TfrmMain::mnuExitClick(TObject *Sender)
 
 void __fastcall TfrmMain::mnuMouseWrapHomeClick(TObject *Sender)
 {
-	ShellExecute(0, "open", "http://www.QDwares.com/mousewrap/", NULL, NULL, SW_SHOWMAXIMIZED);
+	ShellExecute(0, "open", "http://www.qdstudios.com/mousewrap/index.php?v=3.3", NULL, NULL, SW_SHOWMAXIMIZED);
 }
 //---------------------------------------------------------------------------
 
@@ -457,13 +453,13 @@ void ToggleStatus(void)
         if(frmMain->timControl->Enabled)
         {
                 frmMain->TrayIcon->SetIconIndex(1);
-                frmMain->TrayIcon->Hint = "OFF : Mouse Wrap 3 : QDwares";
+                frmMain->TrayIcon->Hint = "OFF : Mouse Wrap 3 : QD Studios";
                 frmMain->mnuTurn->Caption = "&Turn ON";
         }
         else
         {
                 frmMain->TrayIcon->SetIconIndex(0);
-                frmMain->TrayIcon->Hint = "ON : Mouse Wrap 3 : QDwares";
+                frmMain->TrayIcon->Hint = "ON : Mouse Wrap 3 : QD Studios";
                 frmMain->mnuTurn->Caption = "&Turn OFF";
         }
         frmMain->timControl->Enabled = !frmMain->timControl->Enabled;
@@ -484,17 +480,8 @@ void __fastcall TfrmMain::mnuTurnClick(TObject *Sender)
 
 void __fastcall TfrmMain::mnuHelpAboutClick(TObject *Sender)
 {
-/*	char sTemp[1000];
-
-	//std::string sOut;
-
-	GetBaseDirectory(sTemp,sizeof(sTemp));
-
-	strcat(sTemp, "help.chm");
-
-	ShellExecute(0, "open", sTemp, "/ok", NULL, SW_SHOWMAXIMIZED);
-*/
-      	ShellExecute(0, "open", "http://www.QDwares.com/mousewrap/help.php", NULL, NULL, SW_SHOWMAXIMIZED);
+      	ShellExecute(0, "open", "http://www.qdstudios.com/mousewrap/about.php?v=3.3", NULL, NULL, SW_SHOWMAXIMIZED);
 }
 //---------------------------------------------------------------------------
+
 
