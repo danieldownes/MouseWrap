@@ -16,7 +16,7 @@ WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmd, int)
             if(hInstanceMutex)
                 CloseHandle(hInstanceMutex);
 
-//            Application->MessageBoxA("Mouse Wrap 2 options is already running.","Mouse Wrap 2",0);
+//            Application->MessageBoxA("Mouse Wrap options is already running.","Mouse Wrap 3",0);
             exit(0);
         }
 
