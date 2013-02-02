@@ -1,4 +1,4 @@
-; Mouse Wrap 3.00
+; Mouse Wrap 3.3
 ;
 ; This script is based on example1.nsi, but it remember the directory, 
 ; has uninstall support and (optionally) installs start menu shortcuts.
@@ -12,17 +12,17 @@
 SetCompressor /SOLID lzma
 
 ; The name of the installer
-Name "Mouse Wrap 3.00"
+Name "Mouse Wrap 3.3"
 
 ; The file to write
 OutFile "mousewrap3.exe"
 
 ; The default installation directory
-InstallDir $PROGRAMFILES\QDwares\MouseWrap3
+InstallDir $PROGRAMFILES\QDStudios\MouseWrap3
 
 ; Registry key to check for directory (so if you install again, it will 
 ; overwrite the old one automatically)
-InstallDirRegKey HKCU "Software\QDwares\MouseWrap3" "Install_Dir"
+InstallDirRegKey HKCU "Software\QDStudios\MouseWrap3" "Install_Dir"
 
 ; Request application privileges for Windows Vista
 RequestExecutionLevel admin
@@ -64,7 +64,7 @@ Section "Mouse Wrap 3 (required)"
   
   SetOutPath $INSTDIR  
   File "MouseWrap3StartUp.exe"
-  File "QDwares.com.url"
+  File "QDStudios.com.url"
   CreateDirectory "$INSTDIR\components"
   
   
@@ -76,19 +76,21 @@ Section "Mouse Wrap 3 (required)"
   !insertmacro InstallLib DLL SHARED NOREBOOT_PROTECTED CC3260MT.DLL $SYSDIR\CC3260MT.DLL $SYSDIR
   
   ; Write the installation path into the registry
-  WriteRegStr HKCU SOFTWARE\QDwares\MouseWrap3 "Install_Dir" "$INSTDIR"
+  WriteRegStr HKCU SOFTWARE\QDStudios\MouseWrap3 "Install_Dir" "$INSTDIR"
+  
+  ; Clean-up any previous MouseWrap install start-up entry
+  DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap"
+  DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap2"
+  DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap3"
   
   ; Write other registry settings
   WriteRegExpandStr HKCU SOFTWARE\Microsoft\Windows\CurrentVersion\Run "MouseWrap" "$INSTDIR\MouseWrap3StartUp.exe /start"
-  WriteRegExpandStr HKCU SOFTWARE\QDwares\MouseWrap3 "Misc" "0"
-  WriteRegExpandStr HKCU SOFTWARE\QDwares\MouseWrap3 "OnStartup" "0"
-  WriteRegExpandStr HKCU SOFTWARE\QDwares\MouseWrap3 "Remind" "5"
-  
-  ;Clean-up MouseWrap2
-  DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap2"
+  WriteRegExpandStr HKCU SOFTWARE\QDStudios\MouseWrap3 "Misc" "0"
+  WriteRegExpandStr HKCU SOFTWARE\QDStudios\MouseWrap3 "OnStartup" "0"
+  WriteRegExpandStr HKCU SOFTWARE\QDStudios\MouseWrap3 "Remind" "5"
   
   ; Write the uninstall keys for Windows
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "DisplayName" "QDwares - Mouse Wrap 3"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "DisplayName" "Mouse Wrap 3"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "NoRepair" 1
@@ -97,7 +99,7 @@ Section "Mouse Wrap 3 (required)"
 SectionEnd
 
 Section "Load on Windows Start"
-  WriteRegStr HKCU SOFTWARE\QDwares\MouseWrap3 "OnStartup" "1"
+  WriteRegStr HKCU SOFTWARE\QDStudios\MouseWrap3 "OnStartup" "1"
 SectionEnd
 
 ; Optional section (can be disabled by the user)
@@ -106,7 +108,7 @@ Section "Start Menu Shortcuts"
   CreateDirectory "$SMPROGRAMS\Mouse Wrap 3"
   CreateShortCut "$SMPROGRAMS\Mouse Wrap 3\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
   CreateShortCut "$SMPROGRAMS\Mouse Wrap 3\Mouse Wrap 3.lnk" "$INSTDIR\MouseWrap3StartUp.exe" "" "$INSTDIR\MouseWrap3StartUp.exe" 0
-  CreateShortCut "$SMPROGRAMS\Mouse Wrap 3\QDwares.com.lnk" "$INSTDIR\QDwares.url" "" "$INSTDIR\MouseWrap3StartUp.exe" 0
+  CreateShortCut "$SMPROGRAMS\Mouse Wrap 3\QDStudios.com.lnk" "$INSTDIR\QDStudios.com.url" "" "$INSTDIR\QDStudios.url" 0
   
 SectionEnd
 
@@ -118,12 +120,13 @@ Section "Uninstall"
   
   ; Remove registry keys
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3"
-  DeleteRegKey HKCU "SOFTWARE\QDwares\MouseWrap3"
+  DeleteRegKey HKCU "SOFTWARE\QDStudios\MouseWrap3"
   DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap"
+  
 
   ; Remove files and uninstaller
   Delete $INSTDIR\MouseWrap3StartUp.exe
-  Delete $INSTDIR\QDwares.com.url
+  Delete $INSTDIR\QDStudios.com.url
   Delete $INSTDIR\components\MouseWrap3.exe
   Delete $INSTDIR\components\options.exe
   RMDir "$INSTDIR\components"
