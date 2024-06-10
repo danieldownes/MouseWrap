@@ -1,0 +1,149 @@
+; Mouse Wrap 3.3
+;
+; This script is based on example1.nsi, but it remember the directory, 
+; has uninstall support and (optionally) installs start menu shortcuts.
+;
+;--------------------------------
+!include MUI2.nsh
+
+!include Library.nsh
+!define MUI_ICON "xp-vista.ico"
+
+SetCompressor /SOLID lzma
+
+; The name of the installer
+Name "Mouse Wrap 3.3"
+
+; The file to write
+OutFile "mousewrap3.exe"
+
+; The default installation directory
+InstallDir $PROGRAMFILES\QDStudios\MouseWrap3
+
+; Registry key to check for directory (so if you install again, it will 
+; overwrite the old one automatically)
+InstallDirRegKey HKCU "Software\QDStudios\MouseWrap3" "Install_Dir"
+
+; Request application privileges for Windows Vista
+RequestExecutionLevel admin
+
+
+;--------------------------------
+;Interface Settings
+
+  !define MUI_ABORTWARNING
+
+;--------------------------------
+;Pages
+
+  !insertmacro MUI_PAGE_LICENSE "License.txt"
+  !insertmacro MUI_PAGE_COMPONENTS
+  !insertmacro MUI_PAGE_DIRECTORY
+  !insertmacro MUI_PAGE_INSTFILES
+  !define MUI_FINISHPAGE_RUN "$INSTDIR\MouseWrap3StartUp.exe"
+  !insertmacro MUI_PAGE_FINISH
+  
+  !insertmacro MUI_UNPAGE_CONFIRM
+  !insertmacro MUI_UNPAGE_INSTFILES
+  
+;--------------------------------
+;Languages
+ 
+  !insertmacro MUI_LANGUAGE "English"
+
+;--------------------------------
+
+; The stuff to install
+Section "Mouse Wrap 3 (required)"
+
+  SectionIn RO
+  
+  SetOutPath $INSTDIR\components
+  File "components\MouseWrap3.exe"
+  File "components\options.exe"
+  
+  SetOutPath $INSTDIR  
+  File "MouseWrap3StartUp.exe"
+  File "QDStudios.com.url"
+  CreateDirectory "$INSTDIR\components"
+  
+  
+  !insertmacro InstallLib DLL SHARED NOREBOOT_PROTECTED rtl60.bpl $SYSDIR\rtl60.bpl $SYSDIR
+  !insertmacro InstallLib DLL SHARED NOREBOOT_PROTECTED vcl60.bpl $SYSDIR\vcl60.bpl $SYSDIR
+  !insertmacro InstallLib DLL SHARED NOREBOOT_PROTECTED vclx60.bpl $SYSDIR\vclx60.bpl $SYSDIR
+  !insertmacro InstallLib DLL SHARED NOREBOOT_PROTECTED bcbsmp60.bpl $SYSDIR\bcbsmp60.bpl $SYSDIR
+  !insertmacro InstallLib DLL SHARED NOREBOOT_PROTECTED BORLNDMM.DLL $SYSDIR\BORLNDMM.DLL $SYSDIR
+  !insertmacro InstallLib DLL SHARED NOREBOOT_PROTECTED CC3260MT.DLL $SYSDIR\CC3260MT.DLL $SYSDIR
+  
+  ; Write the installation path into the registry
+  WriteRegStr HKCU SOFTWARE\QDStudios\MouseWrap3 "Install_Dir" "$INSTDIR"
+  
+  ; Clean-up any previous MouseWrap install start-up entry
+  DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap"
+  DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap2"
+  DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap3"
+  
+  ; Write other registry settings
+  WriteRegExpandStr HKCU SOFTWARE\Microsoft\Windows\CurrentVersion\Run "MouseWrap" "$INSTDIR\MouseWrap3StartUp.exe /start"
+  WriteRegExpandStr HKCU SOFTWARE\QDStudios\MouseWrap3 "Misc" "0"
+  WriteRegExpandStr HKCU SOFTWARE\QDStudios\MouseWrap3 "OnStartup" "0"
+  WriteRegExpandStr HKCU SOFTWARE\QDStudios\MouseWrap3 "Remind" "5"
+  
+  ; Write the uninstall keys for Windows
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "DisplayName" "Mouse Wrap 3"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "NoModify" 1
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3" "NoRepair" 1
+  WriteUninstaller "uninstall.exe"
+  
+SectionEnd
+
+Section "Load on Windows Start"
+  WriteRegStr HKCU SOFTWARE\QDStudios\MouseWrap3 "OnStartup" "1"
+SectionEnd
+
+; Optional section (can be disabled by the user)
+Section "Start Menu Shortcuts"
+
+  CreateDirectory "$SMPROGRAMS\Mouse Wrap 3"
+  CreateShortCut "$SMPROGRAMS\Mouse Wrap 3\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+  CreateShortCut "$SMPROGRAMS\Mouse Wrap 3\Mouse Wrap 3.lnk" "$INSTDIR\MouseWrap3StartUp.exe" "" "$INSTDIR\MouseWrap3StartUp.exe" 0
+  CreateShortCut "$SMPROGRAMS\Mouse Wrap 3\QDStudios.com.lnk" "$INSTDIR\QDStudios.com.url" "" "$INSTDIR\QDStudios.url" 0
+  
+SectionEnd
+
+;--------------------------------
+
+; Uninstaller
+
+Section "Uninstall"
+  
+  ; Remove registry keys
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MouseWrap3"
+  DeleteRegKey HKCU "SOFTWARE\QDStudios\MouseWrap3"
+  DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "MouseWrap"
+  
+
+  ; Remove files and uninstaller
+  Delete $INSTDIR\MouseWrap3StartUp.exe
+  Delete $INSTDIR\QDStudios.com.url
+  Delete $INSTDIR\components\MouseWrap3.exe
+  Delete $INSTDIR\components\options.exe
+  RMDir "$INSTDIR\components"
+  !insertmacro UnInstallLib DLL SHARED NOREBOOT_PROTECTED $SYSDIR\rtl60.bpl
+  !insertmacro UnInstallLib DLL SHARED NOREBOOT_PROTECTED $SYSDIR\vcl60.bpl
+  !insertmacro UnInstallLib DLL SHARED NOREBOOT_PROTECTED $SYSDIR\vclx60.bpl
+  !insertmacro UnInstallLib DLL SHARED NOREBOOT_PROTECTED $SYSDIR\bcbsmp60.bpl
+  !insertmacro UnInstallLib DLL SHARED NOREBOOT_PROTECTED $SYSDIR\BORLNDMM.DLL
+  !insertmacro UnInstallLib DLL SHARED NOREBOOT_PROTECTED $SYSDIR\CC3260MT.DLL 
+  
+  Delete $INSTDIR\uninstall.exe
+  
+  ; Remove shortcuts, if any
+  Delete "$SMPROGRAMS\Mouse Wrap 3\*.*"
+
+  ; Remove directories used
+  RMDir "$SMPROGRAMS\Mouse Wrap 3"
+  RMDir "$INSTDIR"
+
+SectionEnd
