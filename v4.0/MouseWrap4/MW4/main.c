@@ -100,7 +100,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_TIMER:
         if (wParam == IDT_TIMER1) {
-            WrapMouse();
+            //WrapMouse();
+            WrapMouseWhileDragging();
         }
         break;
     }
