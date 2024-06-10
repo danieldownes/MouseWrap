@@ -1,0 +1,82 @@
+# Version History
+
+## Version 2.04:
+
+Released: 12/01/2005
+
+Modification Details:
+
+Customers of Mouse Wrap were experiencing problems while dragging or resizing windows from one side of the screen to the other using the wrapping functionality. This is because Microsoft Windows will restrict the mouse pointer to only the work-area of the desktop while dragging of normal windows (i.e. it is not possible to drag windows over the taskbar in its default ‘keep on top’ setting enabled).
+
+Mouse Wrap 2.04 solves this problem by detecting when the user is trying to drag or resize a window beyond the taskbar, while still using the minimum amount of your computer’s resources. 
+
+Note, there is a very slight delay when wrapping from the edge of the taskbar, this is because it takes time to evaluate if it is necessary to do the wrap while using low resources.
+
+Mouse Wrap will respect the size and position of your taskbar.
+
+## Version 2.03:
+
+Released: 25/08/2004
+
+Modification Details:
+
+ - Some error messages are now more meaningful.
+
+Fixed Issues:
+
+ - Removed non-critical error messages  (when the error is self resolvable by Mouse Wrap).
+
+
+## Version 2.02:
+
+Released: 28/07/2003
+
+Modification Details:
+
+ - Installer removes redundancies left behind from Mouse Wrap v1.
+ 
+
+## Version 2.01:
+
+Released: 17/06/2003
+
+Modification Details:
+
+ - Slightly smaller download size.
+ - Minor improvements to help file.
+ - Donate prompt text is now not editable.
+
+
+## Version 2.00:
+
+Released: 13/06/2003
+
+New Features:
+
+ - Movement pattern recognition. Allows; Cut, Copy, Paste, Forward and Backward navigation in Windows Explorer and Internet Explorer. The recognised patterns are rapid left and right motion, and rapid back and forth motion.
+ - Options window.
+ - Less memory and CPU usage.
+ - Smaller download.
+ - Redesigned icons.
+
+Fixed Issues:
+
+ - Now auto-adjusts when changing screen resolutions.
+ - Multi-user environment now not an official error. See main page.
+ - Pop-up menu from task tray now unloads when clicking any where else on the screen.
+ - Better task tray icon management.
+
+
+## Version 1.00:
+
+Released 1/12/2001
+
+Features:
+ - Allowed wrapping of the mouse pointing device.
+ - Auto update checking.
+
+Known Issues:
+ - Did not auto-adjust when changing screen resolutions.
+ - Issues with Windows XP when user accounts was involved.
+ - Pop-up menu did not unload when attempting to unselect it.
+ - Did not support a multi-monitor environment.
