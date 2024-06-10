@@ -15,8 +15,8 @@ TEST_SRCS = test/test_main.c test/unity/unity.c
 TEST_OBJS = $(TEST_SRCS:.c=.o)
 
 # Binaries
-BIN = MouseWrap4
-TEST_BIN = test_main
+BIN = bin/MouseWrap4
+TEST_BIN = test_bin
 
 .PHONY: all clean test
 
@@ -30,17 +30,6 @@ $(BIN): $(SRCS:.c=.o)
 # Compile source files
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
-
-# Build unit tests
-test: $(TEST_BIN)
-	./$(TEST_BIN)
-
-$(TEST_BIN): $(TEST_OBJS)
-	$(CC) $(TEST_OBJS) -o $@ -lgdi32 -luser32 -lshell32
-
-# Compile test source files
-test/%.o: test/%.c test/unity/unity.h
-	$(CC) $(CFLAGS) -Itest/unity -Isrc -c $< -o $@
 
 # Clean the build
 clean:
