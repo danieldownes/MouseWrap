@@ -17,8 +17,8 @@ jobs:
       - name: make
         run: make CC=x86_64-w64-mingw32-gcc
         working-directory: ./v4.0
-      - name: make check
-        run: make check
+      - name: make test
+        run: make test
         working-directory: ./v4.0
       - name: make distcheck
         run: make distcheck
