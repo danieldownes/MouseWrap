@@ -52,13 +52,12 @@ test: $(TEST_BIN)
     ./$(TEST_BIN)
 
 $(TEST_BIN): $(TEST_OBJS)
-	$(CC) $(TEST_OBJS) -o $@
+    $(CC) $(TEST_OBJS) -o $@
 
 # Compile test source files
 test/%.o: test/%.c test/unity/unity.h
-	$(CC) $(CFLAGS) -c $< -o $@
-
+    $(CC) $(CFLAGS) -c $< -o $@
 
 # Clean the build
 clean:
-	rm -f $(SRCS:.c=.o) $(TEST_OBJS) $(BIN)-amd64.exe $(BIN)-arm.exe $(TEST_BIN)
+    rm -f $(SRCS:.c=.o) $(TEST_OBJS) $(BIN)-amd64.exe $(BIN)-arm.exe $(TEST_BIN)
