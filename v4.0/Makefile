@@ -47,6 +47,9 @@ $(BIN)-arm.exe: $(SRCS:.c=.o)
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+check: $(TEST_BIN)
+    ./$(TEST_BIN)
+
 # Build unit tests
 test: $(TEST_BIN)
 
@@ -56,6 +59,7 @@ $(TEST_BIN): $(TEST_OBJS)
 # Compile test source files
 test/%.o: test/%.c test/unity/unity.h
 	$(CC) $(CFLAGS) -c $< -o $@
+
 
 # Clean the build
 clean:
