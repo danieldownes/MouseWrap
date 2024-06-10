@@ -1,46 +1,30 @@
 # Makefile
 
 # Compiler and linker
-CC = gcc
-
-# Target architectures
-ARCHS = amd64 arm
+CC = x86_64-w64-mingw32-gcc
 
 # Common flags
-CFLAGS = -std=c17 -Wall -Wextra -pedantic
-LDFLAGS = -luser32 -lgdi32 -lshell32
+CFLAGS = -std=c17 -Wall -Wextra -pedantic -I/mingw64/x86_64-w64-mingw32/include
 
 # Source files
 SRCS = src/main.c src/mouse_wrap.c
-HEADERS = src/mouse_wrap.h
+HEADERS = src/main.h src/mouse_wrap.h
 
 # Test source files
-TEST_SRCS = test/test_main.c test/test_mouse_wrap.c test/unity/unity.c
+TEST_SRCS = test/test_main.c test/unity/unity.c
 TEST_OBJS = $(TEST_SRCS:.c=.o)
 
 # Binaries
 BIN = MouseWrap4
-TEST_BIN = unit_tests
+TEST_BIN = test_main
 
 .PHONY: all clean test
 
 # Default target
-all: $(ARCHS)
+all: $(BIN)
 
-# Build for all architectures
-amd64: CFLAGS += -m64
-amd64: LDFLAGS += -m64
-amd64: $(BIN)-amd64.exe
-
-arm: CFLAGS += -march=armv7-a
-arm: LDFLAGS += -march=armv7-a
-arm: $(BIN)-arm.exe
-
-# Link the binary
-$(BIN)-amd64.exe: $(SRCS:.c=.o)
-	$(CC) $(SRCS:.c=.o) -o $@ $(LDFLAGS)
-
-$(BIN)-arm.exe: $(SRCS:.c=.o)
+# Build the main binary
+$(BIN): $(SRCS:.c=.o)
 	$(CC) $(SRCS:.c=.o) -o $@ $(LDFLAGS)
 
 # Compile source files
@@ -52,12 +36,12 @@ test: $(TEST_BIN)
 	./$(TEST_BIN)
 
 $(TEST_BIN): $(TEST_OBJS)
-	$(CC) $(TEST_OBJS) -o $@
+	$(CC) $(TEST_OBJS) -o $@ -lgdi32 -luser32 -lshell32
 
 # Compile test source files
 test/%.o: test/%.c test/unity/unity.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -Itest/unity -Isrc -c $< -o $@
 
 # Clean the build
 clean:
-	rm -f $(SRCS:.c=.o) $(TEST_OBJS) $(BIN)-amd64.exe $(BIN)-arm.exe $(TEST_BIN)
+	rm -f $(SRCS:.c=.o) $(TEST_OBJS) $(BIN) $(TEST_BIN)

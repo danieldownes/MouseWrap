@@ -1,24 +1,16 @@
 #include <windows.h>
 #include <shellapi.h>
-#include "mouse_wrap.h" // Include the header file
-
-// Global variables
-#define CLASS_NAME "Sample Window Class"
-#define WINDOW_TITLE "Sample Window"
-#define WM_TRAYICON (WM_USER + 1)
-#define IDT_TIMER1 1 // Timer ID for mouse wrap
+#include "main.h"
+#include "mouse_wrap.h"
 
 NOTIFYICONDATA nid;
 HINSTANCE hInst;
-
-// Function declarations
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     hInst = hInstance;
 
-    WNDCLASS wc = { 0 };
+    WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
@@ -35,8 +27,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         NULL,
         NULL,
         hInstance,
-        NULL
-    );
+        NULL);
 
     if (hwnd == NULL)
     {
@@ -60,7 +51,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Set a timer to check and wrap the mouse position every 10 ms
     SetTimer(hwnd, IDT_TIMER1, 10, (TIMERPROC)NULL);
 
-    MSG msg = { 0 };
+    MSG msg = {0};
     while (GetMessage(&msg, NULL, 0, 0))
     {
         TranslateMessage(&msg);
@@ -80,7 +71,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_TRAYICON:
-        if (lParam == WM_RBUTTONDOWN || lParam == WM_LBUTTONDOWN) {
+        if (lParam == WM_RBUTTONDOWN || lParam == WM_LBUTTONDOWN)
+        {
             POINT p;
             GetCursorPos(&p);
             SetForegroundWindow(hwnd);
@@ -99,8 +91,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_TIMER:
-        if (wParam == IDT_TIMER1) {
-            //WrapMouse();
+        if (wParam == IDT_TIMER1)
+        {
+            // WrapMouse();
             WrapMouseWhileDragging();
         }
         break;
