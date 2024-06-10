@@ -13,9 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-      working-directory: ./v4.0/MouseWrap4
     - name: make
       run: make
       working-directory: ./v4.0/MouseWrap4
