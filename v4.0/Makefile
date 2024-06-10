@@ -11,16 +11,18 @@ CFLAGS = -std=c17 -Wall -Wextra -pedantic
 LDFLAGS = -luser32 -lgdi32 -lshell32
 
 # Source files
-SRCS = main.c mouse_wrap.c
-HEADERS = mouse_wrap.h
+SRCS = src/main.c src/mouse_wrap.c
+HEADERS = src/mouse_wrap.h
 
-# Object files
-OBJS = $(SRCS:.c=.o)
+# Test source files
+TEST_SRCS = test/test_main.c test/test_mouse_wrap.c test/unity/unity.c
+TEST_OBJS = $(TEST_SRCS:.c=.o)
 
 # Binaries
-BIN = tray_app
+BIN = MouseWrap4
+TEST_BIN = unit_tests
 
-.PHONY: all clean
+.PHONY: all clean test
 
 # Default target
 all: $(ARCHS)
@@ -35,16 +37,26 @@ arm: LDFLAGS += -march=armv7-a
 arm: $(BIN)-arm.exe
 
 # Link the binary
-$(BIN)-amd64.exe: $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+$(BIN)-amd64.exe: $(SRCS:.c=.o)
+	$(CC) $(SRCS:.c=.o) -o $@ $(LDFLAGS)
 
-$(BIN)-arm.exe: $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+$(BIN)-arm.exe: $(SRCS:.c=.o)
+	$(CC) $(SRCS:.c=.o) -o $@ $(LDFLAGS)
 
 # Compile source files
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Build unit tests
+test: $(TEST_BIN)
+
+$(TEST_BIN): $(TEST_OBJS)
+	$(CC) $(TEST_OBJS) -o $@
+
+# Compile test source files
+test/%.o: test/%.c test/unity/unity.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # Clean the build
 clean:
-	rm -f $(OBJS) $(BIN)-amd64.exe $(BIN)-arm.exe
+	rm -f $(SRCS:.c=.o) $(TEST_OBJS) $(BIN)-amd64.exe $(BIN)-arm.exe $(TEST_BIN)
