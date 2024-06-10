@@ -47,11 +47,9 @@ $(BIN)-arm.exe: $(SRCS:.c=.o)
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-check: $(TEST_BIN)
-    ./$(TEST_BIN)
-
 # Build unit tests
 test: $(TEST_BIN)
+    ./$(TEST_BIN)
 
 $(TEST_BIN): $(TEST_OBJS)
 	$(CC) $(TEST_OBJS) -o $@
