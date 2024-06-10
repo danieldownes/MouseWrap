@@ -1,0 +1,24 @@
+
+
+
+Create pure win32 app in C using visual studio. step by step, add icon to system tray only, with no taskbar.
+
+By way of a new c file, lets add a new feature. The Feature uses the winAPI to allow a mouse wrap feature. This means that if the the mouse touches any edge of the screen, then place it on the opposite side of the screen. For example if it touched the left edge, it would appear on the right edge at the same height position.
+Provide the new C file code and tell me to add any calls in the main.c code
+
+You do not need to repeat files that have no code changes in them. Also we do not need english explainations for all the changes, just include the name of the file and bullet point list of changes for each chat iteration. Please do not list out the file if there have been no changes in that file from now on in our chats going forward.
+
+
+The mouse, once transported to the opposite side, should not then jump back on the next check interation. Do do this, change the newly transported position to be off by one pixel. For example if the mouses jumps from right to left, it should not be at position x 0, but 1.
+
+Using SPI_GETWORKAREA to detect the windows taskbar, adjust the code so that if the mouse appears to stay in this workarea, and that the mouse is dragging (primary mouse button is down), then also perform
+
+
+
+I don't want to check if the mouse is out of bounds. It should be exactly on the boarder of each workarea before it is wrapped, if its beyond, like on the start menu, then it should not wrap. Also we need to wrap on the edge of the screen, for example at the edge of the screen while within taskbar area, whichi is outside of the workspace area.
+
+
+
+We also do not want to wrap between monitors, so if we have two edges of workspace touching, then this should not cause any wrapping.
+
+
