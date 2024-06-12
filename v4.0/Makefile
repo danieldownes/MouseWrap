@@ -5,6 +5,8 @@ CC = x86_64-w64-mingw32-gcc
 
 # Common flags
 CFLAGS = -std=c17 -Wall -Wextra -pedantic -I/mingw64/x86_64-w64-mingw32/include
+LDFLAGS = /nologo /subsystem:windows
+RES = resource.res
 
 # Source files
 SRCS = src/main.c src/mouse_wrap.c
@@ -30,6 +32,10 @@ $(BIN): $(SRCS:.c=.o)
 # Compile source files
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile resource files
+resource.o: resource.rc resource.h
+	$(RC) resource.rc -o resource.o
 
 # Clean the build
 clean:
