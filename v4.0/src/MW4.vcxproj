@@ -140,7 +140,7 @@
     <ResourceCompile Include="MW4.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="C:\Users\danie\Desktop\icons8-monitor-48.png" />
+    <Image Include="mw4-test.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
