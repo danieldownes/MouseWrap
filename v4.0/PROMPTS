@@ -22,3 +22,18 @@ I don't want to check if the mouse is out of bounds. It should be exactly on the
 We also do not want to wrap between monitors, so if we have two edges of workspace touching, then this should not cause any wrapping.
 
 
+
+
+
+ I need functionality to allow the program to add itself to the windows user startup registry ie: Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
+The code should find the programs current folder and add itself for startup.
+There should also be a method to detect if the folder has been moved, and if so, then update the path to reflect the programs new location.
+There should be an option to delete the startup key from the registry too.
+
+
+only provide the updated code for startup.c
+Refactor UpdateStartupPathIfMoved to reduce the nested if statements
+Add a function to check if the key exists and refactor file to use that function.
+
+RegOpenKeyEx is called lots of times, wrap this up in a function consider dry code.
+Remove all nested if statements by using gatekeeper method

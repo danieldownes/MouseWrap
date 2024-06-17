@@ -131,12 +131,14 @@
   <ItemGroup>
     <ClCompile Include="main.c" />
     <ClCompile Include="mouse_wrap.c" />
+    <ClCompile Include="startup.c" />
     <ClCompile Include="taskbar.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h" />
     <ClInclude Include="mouse_wrap.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="startup.h" />
     <ClInclude Include="taskbar.h" />
   </ItemGroup>
   <ItemGroup>

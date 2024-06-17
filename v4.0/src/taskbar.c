@@ -1,6 +1,10 @@
 #include "taskbar.h"
+#include "startup.h"
 
 #define WM_TRAYICON (WM_USER + 1)
+#define IDM_EXITAPP 1001
+#define IDM_BUYMEACOFFEE 1002
+#define IDM_TOGGLE_STARTUP 1003
 
 static NOTIFYICONDATA nid;
 static HMENU hMenu;
@@ -25,36 +29,50 @@ void ShowContextMenu(HWND hwnd)
     GetCursorPos(&pt);
     SetForegroundWindow(hwnd);
 
+    // Update the checkmark for the startup option based on whether the startup key is set
+    CheckMenuItem(hMenu, IDM_TOGGLE_STARTUP, MF_BYCOMMAND | (IsStartupKeySet() ? MF_CHECKED : MF_UNCHECKED));
+
     // Use TrackPopupMenuEx instead of TrackPopupMenu
-    TrackPopupMenuEx(hMenu, TPM_RIGHTBUTTON | TPM_RECURSE | TPM_VERNEGANIMATION | TPM_LAYOUTRTL, pt.x, pt.y, hwnd, NULL);
+    TrackPopupMenuEx(hMenu, TPM_RIGHTBUTTON | TPM_RECURSE | TPM_VERNEGANIMATION, pt.x, pt.y, hwnd, NULL);
 }
 
 void CreateContextMenu()
 {
     hMenu = CreatePopupMenu();
-    AppendMenu(hMenu, MF_STRING, 1002, L"Buy Me a Coffee");
-    AppendMenu(hMenu, MF_STRING, 1001, L"Exit");
+    AppendMenu(hMenu, MF_STRING, IDM_BUYMEACOFFEE, L"Buy Me a Coffee");
+    AppendMenu(hMenu, MF_STRING, IDM_TOGGLE_STARTUP, L"Start with Windows");
+    AppendMenu(hMenu, MF_STRING, IDM_EXITAPP, L"Exit");
 }
 
 void TaskBarCheckClick(LPARAM lParam, HWND hwnd)
 {
     if (LOWORD(lParam) == WM_RBUTTONUP)
-    {
         ShowContextMenu(hwnd);
-    }
+
     else if (LOWORD(lParam) == WM_LBUTTONUP)
-    {
         MessageBox(hwnd, L"Tray icon clicked!", L"Info", MB_OK | MB_ICONINFORMATION);
-    }
 }
 
 void TaskBarCheckCommand(WORD cmd)
 {
-    if (cmd == 1001)
-        PostQuitMessage(0);
+    switch (cmd)
+    {
+        case IDM_EXITAPP:
+            PostQuitMessage(0);
+            break;
 
-    if (cmd == 1002)
-        ShellExecute(NULL, L"open", L"https://buymeacoffee.com/danieldownes/mouse-wrap-4", NULL, NULL, SW_SHOWNORMAL);
+        case IDM_BUYMEACOFFEE:
+            ShellExecute(NULL, L"open", L"https://buymeacoffee.com/danieldownes/mouse-wrap-4", NULL, NULL, SW_SHOWNORMAL);
+            break;
+
+        case IDM_TOGGLE_STARTUP:
+            if (IsStartupKeySet())
+                RemoveFromStartup();
+            else
+                AddToStartup();
+
+            break;
+    }
 }
 
 void CleanUpTrayIcon()
