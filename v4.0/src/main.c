@@ -1,17 +1,8 @@
-#include <windows.h>
-#include "resource.h"
-#include "mouse_wrap.h"
-#include "taskbar.h"
-
-#define CLASS_NAME L"Sample Window Class"
-#define WINDOW_TITLE L"Sample Window"
-#define IDT_TIMER1 1
+#include "main.h"
 
 HINSTANCE hInst;
 
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
     hInst = hInstance;
 
@@ -36,9 +27,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     );
 
     if (hwnd == NULL)
-    {
         return 0;
-    }
 
     CreateTrayIcon(hwnd, hInstance);
     CreateContextMenu();
@@ -61,37 +50,27 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
-    case WM_USER + 1: // WM_TRAYICON
-        if (LOWORD(lParam) == WM_RBUTTONUP)
-        {
-            ShowContextMenu(hwnd);
-        }
-        else if (LOWORD(lParam) == WM_LBUTTONUP)
-        {
-            MessageBox(hwnd, L"Tray icon clicked!", L"Info", MB_OK | MB_ICONINFORMATION);
-        }
-        break;
+        case WM_USER + 1: // WM_TRAYICON
+            TaskBarCheckClick(lParam, hwnd);
+            break;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == 1001)
-        {
+        case WM_COMMAND:
+            TaskBarCheckCommand(LOWORD(wParam));
+            break;
+
+        case WM_DESTROY:
             PostQuitMessage(0);
-        }
-        break;
+            break;
 
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
+        case WM_TIMER:
+            if (wParam == IDT_TIMER1)
+            {
+                WrapMouseWhileDragging();
+            }
+            break;
 
-    case WM_TIMER:
-        if (wParam == IDT_TIMER1)
-        {
-            WrapMouseWhileDragging();
-        }
-        break;
-
-    default:
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        default:
+            return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
     return 0;
 }

@@ -6,9 +6,13 @@
 #include <shellapi.h>
 #include <string.h>
 
+extern NOTIFYICONDATA nid;
+
 void CreateTrayIcon(HWND hwnd, HINSTANCE hInst);
 void ShowContextMenu(HWND hwnd);
 void CreateContextMenu();
+void TaskBarCheckCommand(WORD cmd);
+void TaskBarCheckClick(LPARAM lParam, HWND hwnd);
 void CleanUpTrayIcon();
 
 #endif // TASKBAR_H

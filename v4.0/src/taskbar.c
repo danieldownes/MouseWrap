@@ -14,7 +14,7 @@ void CreateTrayIcon(HWND hwnd, HINSTANCE hInst)
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
     nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON1));
-    wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"Tray Icon Example");
+    wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"Mouse Wrap");
 
     Shell_NotifyIcon(NIM_ADD, &nid);
 }
@@ -32,7 +32,29 @@ void ShowContextMenu(HWND hwnd)
 void CreateContextMenu()
 {
     hMenu = CreatePopupMenu();
+    AppendMenu(hMenu, MF_STRING, 1002, L"Buy Me a Coffee");
     AppendMenu(hMenu, MF_STRING, 1001, L"Exit");
+}
+
+void TaskBarCheckClick(LPARAM lParam, HWND hwnd)
+{
+    if (LOWORD(lParam) == WM_RBUTTONUP)
+    {
+        ShowContextMenu(hwnd);
+    }
+    else if (LOWORD(lParam) == WM_LBUTTONUP)
+    {
+        MessageBox(hwnd, L"Tray icon clicked!", L"Info", MB_OK | MB_ICONINFORMATION);
+    }
+}
+
+void TaskBarCheckCommand(WORD cmd)
+{
+    if (cmd == 1001)
+        PostQuitMessage(0);
+
+    if (cmd == 1002)
+        ShellExecute(NULL, L"open", L"https://buymeacoffee.com/danieldownes/mouse-wrap-4", NULL, NULL, SW_SHOWNORMAL);
 }
 
 void CleanUpTrayIcon()
