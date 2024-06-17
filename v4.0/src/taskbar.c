@@ -1,23 +1,27 @@
 #include "taskbar.h"
-#include "startup.h"
+#include "mouse_wrap.h"
 
 #define WM_TRAYICON (WM_USER + 1)
 #define IDM_EXITAPP 1001
 #define IDM_BUYMEACOFFEE 1002
 #define IDM_TOGGLE_STARTUP 1003
 
+HINSTANCE hInstMain;
+
 static NOTIFYICONDATA nid;
 static HMENU hMenu;
 
 void CreateTrayIcon(HWND hwnd, HINSTANCE hInst)
 {
+    hInstMain = hInst;
+
     memset(&nid, 0, sizeof(nid));
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd = hwnd;
     nid.uID = 1;
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
-    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON1));
+    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON_ENABLED));
     wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"Mouse Wrap");
 
     Shell_NotifyIcon(NIM_ADD, &nid);
@@ -50,7 +54,7 @@ void TaskBarCheckClick(LPARAM lParam, HWND hwnd)
         ShowContextMenu(hwnd);
 
     else if (LOWORD(lParam) == WM_LBUTTONUP)
-        MessageBox(hwnd, L"Tray icon clicked!", L"Info", MB_OK | MB_ICONINFORMATION);
+        IconClicked(hwnd);
 }
 
 void TaskBarCheckCommand(WORD cmd)
@@ -73,6 +77,14 @@ void TaskBarCheckCommand(WORD cmd)
 
             break;
     }
+}
+
+void IconClicked(HWND hwnd)
+{
+	ToggleWrapEnabled(hwnd);
+    // Swap tray icon
+    nid.hIcon = LoadIcon(hInstMain, MAKEINTRESOURCE(wrapEnabled ? IDI_ICON_ENABLED : IDI_ICON_DISABLED));
+	Shell_NotifyIcon(NIM_MODIFY, &nid);
 }
 
 void CleanUpTrayIcon()

@@ -5,10 +5,10 @@
 #include "resource.h"
 #include "mouse_wrap.h"
 #include "taskbar.h"
+#include "startup.h"
 
 #define CLASS_NAME "Mouse Wrap"
 #define WINDOW_TITLE "Mouse Wrap"
-#define IDT_TIMER1 1
 
 extern HINSTANCE hInst;
 

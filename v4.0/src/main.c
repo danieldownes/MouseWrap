@@ -10,7 +10,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
-    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_ENABLED));
 
     RegisterClass(&wc);
 
@@ -32,7 +32,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
     CreateTrayIcon(hwnd, hInstance);
     CreateContextMenu();
 
-    SetTimer(hwnd, IDT_TIMER1, 100, NULL);
+    wrapEnabled = FALSE;
+    ToggleWrapEnabled(hwnd);
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
@@ -63,10 +64,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             break;
 
         case WM_TIMER:
-            if (wParam == IDT_TIMER1)
-            {
+            if (wParam == IDT_WRAP_TIMER)
                 WrapMouseWhileDragging();
-            }
+
             break;
 
         default:
@@ -74,3 +74,4 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
+

@@ -51,7 +51,10 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="mw4-test.ico">
+    <Image Include="mw4.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="mw4-disabled.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

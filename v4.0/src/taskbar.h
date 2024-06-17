@@ -13,6 +13,7 @@ void ShowContextMenu(HWND hwnd);
 void CreateContextMenu();
 void TaskBarCheckCommand(WORD cmd);
 void TaskBarCheckClick(LPARAM lParam, HWND hwnd);
+void IconClicked();
 void CleanUpTrayIcon();
 
 #endif // TASKBAR_H
