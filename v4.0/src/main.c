@@ -1,9 +1,13 @@
 #include "main.h"
 
 HINSTANCE hInst;
+HANDLE hMutexSingleInstance;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
+    if (CheckAlreadyRunning())
+		return 0;
+
     hInst = hInstance;
 
     WNDCLASS wc = { 0 };
@@ -44,6 +48,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
 
     CleanUpTrayIcon();
 
+    // Release the mutex
+    ReleaseMutex(hMutexSingleInstance);
+    CloseHandle(hMutexSingleInstance);
+
     return 0;
 }
 
@@ -69,9 +77,19 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             break;
 
-        default:
-            return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    default:
+        return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
     return 0;
 }
 
+BOOL CheckAlreadyRunning()
+{
+    hMutexSingleInstance = CreateMutex(NULL, FALSE, L"MouseWrapSingleInstance");
+    if (GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        MessageBox(NULL, L"Mouse Wrap is already running.", L"Error", MB_OK | MB_ICONERROR);
+        return TRUE;
+    }
+    return FALSE;
+}

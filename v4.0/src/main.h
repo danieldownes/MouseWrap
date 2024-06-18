@@ -15,6 +15,8 @@ extern HINSTANCE hInst;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+BOOL CheckAlreadyRunning();
+
 void TaskBarCheckClick(LPARAM lParam, HWND hwnd);
 
 #endif // MAIN_H
