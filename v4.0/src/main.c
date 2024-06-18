@@ -14,7 +14,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
-    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_ENABLED));
+    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_ENABLED_DARK));
 
     RegisterClass(&wc);
 

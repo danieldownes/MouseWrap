@@ -1,5 +1,6 @@
 #include "taskbar.h"
 #include "mouse_wrap.h"
+#include <windows.h>
 
 #define WM_TRAYICON (WM_USER + 1)
 #define IDM_EXITAPP 1001
@@ -11,9 +12,30 @@ HINSTANCE hInstMain;
 static NOTIFYICONDATA nid;
 static HMENU hMenu;
 
+BOOL IsDarkTheme()
+{
+    HKEY hKey;
+    DWORD dwType = REG_DWORD;
+    DWORD dwValue = 0;
+    DWORD dwSize = sizeof(DWORD);
+
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+    {
+        if (RegQueryValueEx(hKey, L"AppsUseLightTheme", NULL, &dwType, (LPBYTE)&dwValue, &dwSize) == ERROR_SUCCESS)
+        {
+            RegCloseKey(hKey);
+            return dwValue == 0; // 0 means dark theme
+        }
+        RegCloseKey(hKey);
+    }
+    return FALSE; // Default to light theme if there is an issue
+}
+
 void CreateTrayIcon(HWND hwnd, HINSTANCE hInst)
 {
     hInstMain = hInst;
+
+    BOOL isDarkTheme = IsDarkTheme();
 
     memset(&nid, 0, sizeof(nid));
     nid.cbSize = sizeof(NOTIFYICONDATA);
@@ -21,7 +43,7 @@ void CreateTrayIcon(HWND hwnd, HINSTANCE hInst)
     nid.uID = 1;
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
-    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON_ENABLED));
+    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(isDarkTheme ? IDI_ICON_ENABLED_DARK : IDI_ICON_ENABLED_LIGHT));
     wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"Mouse Wrap");
 
     Shell_NotifyIcon(NIM_ADD, &nid);
@@ -81,10 +103,15 @@ void TaskBarCheckCommand(WORD cmd)
 
 void IconClicked(HWND hwnd)
 {
-	ToggleWrapEnabled(hwnd);
+    ToggleWrapEnabled(hwnd);
+
+    BOOL isDarkTheme = IsDarkTheme();
+
     // Swap tray icon
-    nid.hIcon = LoadIcon(hInstMain, MAKEINTRESOURCE(wrapEnabled ? IDI_ICON_ENABLED : IDI_ICON_DISABLED));
-	Shell_NotifyIcon(NIM_MODIFY, &nid);
+    nid.hIcon = LoadIcon(hInstMain, MAKEINTRESOURCE((wrapEnabled ?
+        (isDarkTheme ? IDI_ICON_ENABLED_DARK : IDI_ICON_ENABLED_LIGHT) :
+        (isDarkTheme ? IDI_ICON_DISABLED_DARK : IDI_ICON_DISABLED_LIGHT))));
+    Shell_NotifyIcon(NIM_MODIFY, &nid);
 }
 
 void CleanUpTrayIcon()

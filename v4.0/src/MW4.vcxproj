@@ -145,7 +145,10 @@
     <ResourceCompile Include="MW4.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icon1.ico" />
+    <Image Include="mw4-disabled-light.ico" />
     <Image Include="mw4-disabled.ico" />
+    <Image Include="mw4-light.ico" />
     <Image Include="mw4.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
