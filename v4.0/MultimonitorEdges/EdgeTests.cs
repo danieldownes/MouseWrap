@@ -15,9 +15,29 @@ public class EdgeTests
     }
 
     [Test]
-    public void Edge_Intersects_HorizontalEdgesIntersecting_ReturnsTrue()
+    public void Edge_IntersectsWithin_HorizontalEdgesIntersecting_ReturnsTrue()
     {
         var edge1 = new Edge(0, 10, 5, 5);
+        var edge2 = new Edge(5, 15, 5, 5);
+
+        Assert.IsTrue(edge1.Intersects(edge2));
+        Assert.IsTrue(edge2.Intersects(edge1));
+    }
+
+    [Test]
+    public void Edge_IntersectsOverlap_HorizontalEdgesIntersecting_ReturnsTrue()
+    {
+        var edge1 = new Edge(0, 20, 5, 5);
+        var edge2 = new Edge(5, 15, 5, 5);
+
+        Assert.IsTrue(edge1.Intersects(edge2));
+        Assert.IsTrue(edge2.Intersects(edge1));
+    }
+
+    [Test]
+    public void Edge_IntersectsSameCorner_HorizontalEdgesIntersecting_ReturnsTrue()
+    {
+        var edge1 = new Edge(0, 15, 5, 5);
         var edge2 = new Edge(5, 15, 5, 5);
 
         Assert.IsTrue(edge1.Intersects(edge2));

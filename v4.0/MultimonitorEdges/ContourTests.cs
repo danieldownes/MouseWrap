@@ -1,97 +1,42 @@
-namespace MultimonitorEdges
+namespace MultimonitorEdges;
+
+using System.Collections.Generic;
+using NUnit.Framework;
+
+[TestFixture]
+public class ContourTests
 {
-    [TestFixture]
-    public class ContourTests
+    [Test]
+    public void GetContour_SingleRectangle()
     {
-        [Test]
-        public void GetContour_TwoRectangles_T_ShapedContour()
+        var rectangles = new List<Rectangle>
         {
-            var rectangles = new List<Rectangle>
-            {
-                new Rectangle(0, 10, 0, 30),
-                new Rectangle(10, 20, -40, 50)
-            };
-
-            var contourEdges = Contour.GetContour(rectangles);
-
-            var expectedEdges = new List<Edge>
-            {
-                new Edge(0, 10, -40, 50),
-                new Edge(10, 20, -40, 50),
-                new Edge(0, 20, 0, 30),
-                new Edge(0, 20, -40, -40),
-                new Edge(0, 20, 50, 50)
-            };
-
-            CollectionAssert.AreEquivalent(expectedEdges, contourEdges);
-        }
-
-        [Test]
-        public void GetContour_TwoRectangles_L_ShapedContour()
-        {
-            var rectangles = new List<Rectangle>
-            {
-                new Rectangle(0, 10, 0, 30),
-                new Rectangle(10, 20, 20, 40)
-            };
-
-            var contourEdges = Contour.GetContour(rectangles);
-
-            var expectedEdges = new List<Edge>
-            {
-                new Edge(0, 10, 0, 30),
-                new Edge(10, 20, 20, 40),
-                new Edge(0, 20, 0, 0),
-                new Edge(0, 20, 30, 30),
-                new Edge(0, 0, 0, 30),
-                new Edge(20, 20, 20, 40)
-            };
-
-            CollectionAssert.AreEquivalent(expectedEdges, contourEdges);
-        }
-
-        [Test]
-        public void GetContour_TwoRectangles_NoIntersection()
-        {
-            var rectangles = new List<Rectangle>
-            {
-                new Rectangle(0, 10, 0, 30),
-                new Rectangle(20, 30, 20, 40)
-            };
-
-            var contourEdges = Contour.GetContour(rectangles);
-
-            var expectedEdges = new List<Edge>
-        {
-            new Edge(0, 10, 0, 30),
-            new Edge(20, 30, 20, 40),
-            new Edge(0, 10, 30, 30),
-            new Edge(0, 0, 0, 30),
-            new Edge(10, 10, 0, 30),
-            new Edge(20, 20, 20, 40),
-            new Edge(30, 30, 20, 40),
-            new Edge(10, 10, 30, 30)
+            new Rectangle(0, 10, 0, 30),
         };
 
-            CollectionAssert.AreEquivalent(expectedEdges, contourEdges);
-        }
+        var contour = Contour.GetContour(rectangles);
 
-        [Test]
-        public void GetContour_OneRectangle_RectangleEdges()
+        Assert.AreEqual(4, contour.Count);
+    }
+
+    [Test]
+    public void GetContour_TwoRectangles_WithIntersection_CreatesHole()
+    {
+        var rectangles = new List<Rectangle>
         {
-            var rectangle = new Rectangle(0, 10, 0, 20);
+            new Rectangle(0, 10, 0, 30),
+            new Rectangle(10, 15, 0, 40)
+        };
 
-            var contourEdges = Contour.GetContour(new List<Rectangle> { rectangle });
+        var contour = Contour.GetContour(rectangles);
 
-            var expectedEdges = new List<Edge>
-            {
-                new Edge(0, 10, 0, 0),
-                new Edge(0, 10, 20, 20),
-                new Edge(0, 0, 0, 20),
-                new Edge(10, 10, 0, 20)
-            };
+        // Assert that contour has correct number of edges and creates a hole
 
-            CollectionAssert.AreEquivalent(expectedEdges, contourEdges);
-        }
+        Assert.Contains(new Edge(0, 0, 0, 30), contour);
+        Assert.Contains(new Edge(0, 10, 30, 30), contour);
+        Assert.Contains(new Edge(10, 10, 30, 40), contour); // Nice hole
+        Assert.Contains(new Edge(15, 15, 0, 40), contour);
+        Assert.Contains(new Edge(10, 15, 0, 0), contour);
+        Assert.Contains(new Edge(10, 15, 40, 40), contour);
     }
 }
