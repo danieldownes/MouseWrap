@@ -35,8 +35,6 @@ public class Contour
         return edges;
     }
 
-
-
     private static List<Edge> RemoveIntersection(Edge edge1, Edge edge2)
     {
         List<Edge> mergedEdges = new List<Edge>();

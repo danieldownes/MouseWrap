@@ -1,10 +1,20 @@
 ﻿namespace MultimonitorEdges
 {
+    /// <summary>
+    /// A valid edge would always comply to the rule:
+    /// x1 == x2 XOR y1 == y2
+    /// for example: if x1 == x2, then y1 < y2, this is a horizontal edge, with a length of y2 - y1.
+    /// Note in this case, y1 is always smaller than y2.
+    /// An edge may also have a direction, if true, then direction faces the positive, 
+    /// so in this case, if direction==true then point in the direction that the edge faces would be
+    /// great than x1 or x2.
+    /// </summary>
     public class Edge : IEquatable<Edge>
     {
         public int x1, x2, y1, y2;
+        public bool direction;
 
-        public Edge(int x1, int x2, int y1, int y2)
+        public Edge(int x1, int x2, int y1, int y2, bool direction)
         {
             if (x1 == x2 && y1 > y2)
             {
@@ -25,6 +35,7 @@
             this.x2 = x2;
             this.y1 = y1;
             this.y2 = y2;
+            this.direction = direction;
         }
 
         public bool Equals(Edge other)

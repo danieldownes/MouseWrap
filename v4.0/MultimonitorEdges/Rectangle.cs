@@ -15,12 +15,12 @@
         public List<Edge> GetEdges()
         {
             return new List<Edge>
-        {
-            new Edge(xMin, xMin, yMin, yMax), // Left edge
-            new Edge(xMax, xMax, yMin, yMax), // Right edge
-            new Edge(xMin, xMax, yMin, yMin), // Bottom edge
-            new Edge(xMin, xMax, yMax, yMax)  // Top edge
-        };
+            {
+                new Edge(xMin, xMin, yMin, yMax, true),     // Left edge
+                new Edge(xMax, xMax, yMin, yMax, false),    // Right edge
+                new Edge(xMin, xMax, yMin, yMin, true),     // Bottom edge
+                new Edge(xMin, xMax, yMax, yMax, false)     // Top edge
+            };
         }
     }
 

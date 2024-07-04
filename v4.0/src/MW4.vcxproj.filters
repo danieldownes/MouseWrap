@@ -27,6 +27,9 @@
     <ClCompile Include="startup.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="multimonitor_edges.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mouse_wrap.h">
@@ -44,6 +47,9 @@
     <ClInclude Include="startup.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="multimonitor_edges.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MW4.rc">
@@ -55,6 +61,15 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="mw4-disabled.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icon1.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="mw4-disabled-light.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="mw4-light.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
