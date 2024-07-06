@@ -3,7 +3,6 @@ namespace MultimonitorEdges;
 [TestFixture]
 public class EdgeTests
 {
-
     [Test]
     public void Edge_Intersects_VerticalEdgesIntersecting_ReturnsTrue()
     {

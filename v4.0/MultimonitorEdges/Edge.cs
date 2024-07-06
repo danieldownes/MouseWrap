@@ -14,7 +14,7 @@
         public int x1, x2, y1, y2;
         public bool direction;
 
-        public Edge(int x1, int x2, int y1, int y2, bool direction)
+        public Edge(int x1, int x2, int y1, int y2, bool direction = true)
         {
             if (x1 == x2 && y1 > y2)
             {

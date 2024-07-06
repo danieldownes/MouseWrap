@@ -26,9 +26,8 @@
                     foreach (var overlappingEdge in overlappingEdges)
                     {
                         activeEdges.Remove(overlappingEdge);
-                        contourEdges.AddRange(MergeEdges(overlappingEdge, evt.Edge));
+                        contourEdges.Add(MergeEdges(overlappingEdge, evt.Edge));
                     }
-
                     if (overlappingEdges.Count == 0)
                     {
                         activeEdges.Add(evt.Edge);
@@ -52,26 +51,6 @@
                     Math.Max(e1.x1, e2.x1) <= Math.Min(e1.x2, e2.x2));
         }
 
-        private static List<Edge> MergeEdges(Edge e1, Edge e2)
-        {
-            var result = new List<Edge>();
-
-            if (e1.x1 == e1.x2 && e2.x1 == e2.x2) // Vertical edges
-            {
-                int yMin = Math.Min(e1.y1, e2.y1);
-                int yMax = Math.Max(e1.y2, e2.y2);
-                result.Add(new Edge(e1.x1, e1.x2, yMin, yMax, e1.direction));
-            }
-            else if (e1.y1 == e1.y2 && e2.y1 == e2.y2) // Horizontal edges
-            {
-                int xMin = Math.Min(e1.x1, e2.x1);
-                int xMax = Math.Max(e1.x2, e2.x2);
-                result.Add(new Edge(xMin, xMax, e1.y1, e1.y2, e1.direction));
-            }
-
-            return result;
-        }
-
         private static List<Edge> MergeCollinearEdges(List<Edge> edges)
         {
             var mergedEdges = new List<Edge>();
@@ -80,9 +59,9 @@
             for (int i = 0; i < sortedEdges.Count; i++)
             {
                 var currentEdge = sortedEdges[i];
-                while (i + 1 < sortedEdges.Count && AreCollinear(currentEdge, sortedEdges[i + 1]))
+                while (i + 1 < sortedEdges.Count && CanMergeEdges(currentEdge, sortedEdges[i + 1]))
                 {
-                    currentEdge = MergeCollinearEdge(currentEdge, sortedEdges[i + 1]);
+                    currentEdge = MergeEdges(currentEdge, sortedEdges[i + 1]);
                     i++;
                 }
                 mergedEdges.Add(currentEdge);
@@ -91,13 +70,16 @@
             return mergedEdges;
         }
 
-        private static bool AreCollinear(Edge e1, Edge e2)
+        private static bool CanMergeEdges(Edge e1, Edge e2)
         {
-            return (e1.x1 == e1.x2 && e2.x1 == e2.x2 && e1.x1 == e2.x1) ||
-                   (e1.y1 == e1.y2 && e2.y1 == e2.y2 && e1.y1 == e2.y1);
+            // Check if edges are collinear and touching or overlapping
+            return (e1.x1 == e1.x2 && e2.x1 == e2.x2 && e1.x1 == e2.x1 &&
+                    ((e1.y2 >= e2.y1 && e1.y1 <= e2.y2) || (e2.y2 >= e1.y1 && e2.y1 <= e1.y2))) ||
+                   (e1.y1 == e1.y2 && e2.y1 == e2.y2 && e1.y1 == e2.y1 &&
+                    ((e1.x2 >= e2.x1 && e1.x1 <= e2.x2) || (e2.x2 >= e1.x1 && e2.x1 <= e1.x2)));
         }
 
-        private static Edge MergeCollinearEdge(Edge e1, Edge e2)
+        private static Edge MergeEdges(Edge e1, Edge e2)
         {
             if (e1.x1 == e1.x2 && e2.x1 == e2.x2) // Vertical edges
             {
@@ -107,6 +89,12 @@
             {
                 return new Edge(Math.Min(e1.x1, e2.x1), Math.Max(e1.x2, e2.x2), e1.y1, e1.y2, e1.direction);
             }
+        }
+
+        private static bool AreCollinear(Edge e1, Edge e2)
+        {
+            return (e1.x1 == e1.x2 && e2.x1 == e2.x2 && e1.x1 == e2.x1) ||
+                   (e1.y1 == e1.y2 && e2.y1 == e2.y2 && e1.y1 == e2.y1);
         }
 
         private class EdgeComparer : IComparer<Edge>

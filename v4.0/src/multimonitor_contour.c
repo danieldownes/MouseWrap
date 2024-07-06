@@ -1,4 +1,4 @@
-#include "contour.h"
+#include "multimonitor_contour.h"
 #include <stdlib.h>
 #include <string.h>
 

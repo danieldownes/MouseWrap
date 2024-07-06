@@ -48,9 +48,9 @@ public class Contour
 
             // Create two new edges representing the non-overlapping parts
             if (edge1.x1 < edge2.x1)
-                mergedEdges.Add(new Edge(edge1.x1, edge2.x1, edge1.y1, edge1.y2)); // Left part
+                mergedEdges.Add(new Edge(edge1.x1, edge2.x1, edge1.y1, edge1.y2, true)); // Left part
             if (edge1.x2 > edge2.x2)
-                mergedEdges.Add(new Edge(edge2.x2, edge1.x2, edge1.y1, edge1.y2)); // Right part
+                mergedEdges.Add(new Edge(edge2.x2, edge1.x2, edge1.y1, edge1.y2, false)); // Right part
 
         }
         // Check if the edges intersect vertically
@@ -62,9 +62,9 @@ public class Contour
 
             // Create two new edges representing the non-overlapping parts
             if (edge1.y1 < edge2.y1)
-                mergedEdges.Add(new Edge(edge1.x1, edge1.x2, edge1.y1, edge2.y1)); // Upper part
+                mergedEdges.Add(new Edge(edge1.x1, edge1.x2, edge1.y1, edge2.y1, false)); // Upper part
             if (edge1.y2 > edge2.y2)
-                mergedEdges.Add(new Edge(edge1.x1, edge1.x2, edge2.y2, edge1.y2)); // Lower part
+                mergedEdges.Add(new Edge(edge1.x1, edge1.x2, edge2.y2, edge1.y2, true)); // Lower part
 
         }
 

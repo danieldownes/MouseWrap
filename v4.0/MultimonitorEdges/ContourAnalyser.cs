@@ -25,39 +25,62 @@
                 return null;
             }
 
-            // Determine the direction vector of the edge
-            Point direction = GetEdgeDirection(edgeContainingPoint);
+            // Determine if the edge is horizontal or vertical
+            bool isHorizontal = edgeContainingPoint.y1 == edgeContainingPoint.y2;
 
-            // Start from the given point and move in the direction of the edge
-            Point currentPoint = point;
-            Point startPoint = point;
-            while (true)
+            // Create a filtered list of potential opposite edges
+            var filteredEdges = contourEdges
+                // Opposite direction
+                .Where(edge => edge.direction != edgeContainingPoint.direction)
+
+                // Match orientation
+                .Where(edge => (isHorizontal && edge.y1 == edge.y2)
+                    || (!isHorizontal && edge.x1 == edge.x2))
+
+                // Point in range
+                .Where(edge => (isHorizontal && point.X >= edge.x1 && point.X <= edge.x2)
+                    || (!isHorizontal && point.Y >= edge.y1 && point.Y <= edge.y2))
+
+                .ToList();
+
+            if (filteredEdges.Count == 0)
             {
-                currentPoint = new Point(currentPoint.X + direction.X, currentPoint.Y + direction.Y);
-
-                // Check if we've reached the end of the current edge
-                if (!IsPointOnEdge(currentPoint, edgeContainingPoint))
-                {
-                    // Find the next edge
-                    Edge nextEdge = FindNextEdge(currentPoint, contourEdges);
-                    if (nextEdge == null)
-                    {
-                        // We've reached a corner, return the last point on the current edge
-                        return new Point(currentPoint.X - direction.X, currentPoint.Y - direction.Y);
-                    }
-
-                    // Update the direction for the new edge
-                    direction = GetEdgeDirection(nextEdge);
-                    edgeContainingPoint = nextEdge;
-                }
-
-                // Check if we've completed a full loop
-                if (currentPoint.X == startPoint.X && currentPoint.Y == startPoint.Y)
-                {
-                    Console.WriteLine("Completed a full loop without finding an opposite point.");
-                    return null;
-                }
+                Console.WriteLine("No opposite edges found.");
+                return null;
             }
+
+            // Find the nearest opposite edge
+            Edge nearestOppositeEdge = filteredEdges
+                .OrderBy(edge => DistanceBetweenEdges(edgeContainingPoint, edge))
+                .First();
+
+            // Calculate the point on the nearest opposite edge
+            return CalculatePointOnOppositeEdge(point, edgeContainingPoint, nearestOppositeEdge);
+        }
+
+        private static double DistanceBetweenEdges(Edge edge1, Edge edge2)
+        {
+            if (edge1.x1 == edge1.x2 && edge2.x1 == edge2.x2) // Both edges are vertical
+            {
+                return Math.Abs(edge1.x1 - edge2.x1);
+            }
+            else if (edge1.y1 == edge1.y2 && edge2.y1 == edge2.y2) // Both edges are horizontal
+            {
+                return Math.Abs(edge1.y1 - edge2.y1);
+            }
+            else
+            {
+                // This case should not occur if we've filtered correctly, but we'll include it for robustness
+                throw new ArgumentException("Edges must be either both vertical or both horizontal");
+            }
+        }
+
+        private static Point CalculatePointOnOppositeEdge(Point originalPoint, Edge originalEdge, Edge oppositeEdge)
+        {
+            if (oppositeEdge.x1 == oppositeEdge.x2) // Vertical edge
+                return new Point(oppositeEdge.x1, originalPoint.Y);
+            else
+                return new Point(originalPoint.X, oppositeEdge.y1);
         }
 
         private static bool IsPointOnEdge(Point point, Edge edge)
@@ -83,7 +106,7 @@
                 (edge.x2 == point.X && edge.y2 == point.Y));
         }
 
-        private static Point GetEdgeDirection(Edge edge)
+        private static Point GetEdgeDirectionVector(Edge edge)
         {
             Point direction = edge.x1 == edge.x2
                 ? new Point(0, 1)  // Vertical edge

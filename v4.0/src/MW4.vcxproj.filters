@@ -30,6 +30,9 @@
     <ClCompile Include="multimonitor_edges.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="multimonitor_contour.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mouse_wrap.h">
@@ -48,6 +51,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="multimonitor_edges.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="multimonitor_contour.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

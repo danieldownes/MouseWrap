@@ -131,6 +131,7 @@
   <ItemGroup>
     <ClCompile Include="main.c" />
     <ClCompile Include="mouse_wrap.c" />
+    <ClCompile Include="multimonitor_contour.c" />
     <ClCompile Include="multimonitor_edges.c" />
     <ClCompile Include="startup.c" />
     <ClCompile Include="taskbar.c" />
@@ -138,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="main.h" />
     <ClInclude Include="mouse_wrap.h" />
+    <ClInclude Include="multimonitor_contour.h" />
     <ClInclude Include="multimonitor_edges.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="startup.h" />
