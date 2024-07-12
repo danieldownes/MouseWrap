@@ -102,7 +102,8 @@
         async function getLatestRelease() {
             const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`);
             const data = await response.json();
-            return data.tag_name;
+            const exeAsset = data.assets.find(asset => asset.name.endsWith('.exe'));
+            return { tag_name: data.tag_name, exe_url: exeAsset ? exeAsset.browser_download_url : null };
         }
 
         function parseVersion(version) {
@@ -129,7 +130,7 @@
 
         async function checkVersion() {
             const currentVersion = getVersionFromURL();
-            const latestVersion = await getLatestRelease();
+            const { tag_name: latestVersion, exe_url: exeUrl } = await getLatestRelease();
             const resultDiv = document.getElementById('result');
             const downloadBtn = document.getElementById('downloadBtn');
 
@@ -153,14 +154,13 @@
                 resultDiv.innerHTML = `There is a newer version of <b>MouseWrap</b>!<br /><br />
                     You have version ${parsedCurrentVersion}, but the latest release is <b>${parsedLatestVersion}</b>`;
                 resultDiv.style.backgroundColor = '#FF6347'; // Tomato red
-                downloadBtn.innerHTML = `Download MouseWrap ${parsedLatestVersion}`
+                downloadBtn.innerHTML = `Download MouseWrap ${parsedLatestVersion}`;
                 downloadBtn.style.display = 'block';
+                downloadBtn.onclick = () => {
+                    window.location.href = exeUrl;
+                };
             }
         }
-
-        document.getElementById('downloadBtn').addEventListener('click', () => {
-            window.location.href = `https://github.com/${owner}/${repo}/releases/latest`;
-        });
 
         checkVersion();
     </script>
