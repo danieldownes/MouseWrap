@@ -5,15 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Version Checker</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>">
     <style>
         body {
             font-family: Arial, sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
+        }
+
+        h1 {
+            margin-bottom: 20px;
         }
 
         #result {
@@ -22,12 +29,30 @@
             border-radius: 10px;
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        #downloadBtn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+
+        #downloadBtn:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 
 <body>
+    <h1>Version Check Result</h1>
     <div id="result">Checking version...</div>
+    <button id="downloadBtn">Download Latest Version</button>
 
     <script>
         const owner = 'danieldownes';
@@ -44,9 +69,16 @@
             return data.tag_name;
         }
 
+        function parseVersion(version) {
+            return version.split('.').map(part => {
+                const num = parseInt(part.replace(/[^\d]+/g, ''), 10);
+                return isNaN(num) ? 0 : num;
+            });
+        }
+
         function compareVersions(v1, v2) {
-            const parts1 = v1.split('.').map(Number);
-            const parts2 = v2.split('.').map(Number);
+            const parts1 = parseVersion(v1);
+            const parts2 = parseVersion(v2);
 
             for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
                 const part1 = parts1[i] || 0;
@@ -62,22 +94,32 @@
         async function checkVersion() {
             const currentVersion = getVersionFromURL();
             const latestVersion = await getLatestRelease();
+            const resultDiv = document.getElementById('result');
+            const downloadBtn = document.getElementById('downloadBtn');
 
             if (!currentVersion) {
-                document.getElementById('result').innerHTML = 'Error: No version specified in URL';
+                resultDiv.innerHTML = 'Error: No version specified in URL';
                 return;
             }
 
             const comparison = compareVersions(currentVersion, latestVersion);
 
             if (comparison === 0) {
-                document.getElementById('result').innerHTML = `Version ${currentVersion} is the latest release`;
+                resultDiv.innerHTML = `Version ${currentVersion} is the latest release`;
+                resultDiv.style.backgroundColor = '#90EE90'; // Light green
             } else if (comparison > 0) {
-                document.getElementById('result').innerHTML = `Version ${currentVersion} is newer than the latest release (${latestVersion})`;
+                resultDiv.innerHTML = `Version ${currentVersion} is newer than the latest release (${latestVersion})`;
+                resultDiv.style.backgroundColor = '#FFD700'; // Gold
             } else {
-                document.getElementById('result').innerHTML = `Version ${currentVersion} is older than the latest release (${latestVersion})`;
+                resultDiv.innerHTML = `Version ${currentVersion} is older than the latest release (${latestVersion})`;
+                resultDiv.style.backgroundColor = '#FF6347'; // Tomato red
+                downloadBtn.style.display = 'block';
             }
         }
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            window.location.href = `https://github.com/${owner}/${repo}/releases/latest`;
+        });
 
         checkVersion();
     </script>
