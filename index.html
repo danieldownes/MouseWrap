@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Version Checker</title>
+    <title>MouseWrap - Version Checker</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>">
     <style>
@@ -20,6 +20,11 @@
         }
 
         h1 {
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 0;
             margin-bottom: 20px;
         }
 
@@ -33,26 +38,56 @@
         }
 
         #downloadBtn {
-            margin-top: 15px;
-            padding: 10px 20px;
+            margin-top: 25px;
+            padding: 30px 60px;
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            box-shadow: 0 10px 10px rgba(0, 0, 0, 0.6);
+            transition: background-color 3s ease;
             display: none;
+            font-size: larger;
         }
 
         #downloadBtn:hover {
             background-color: #45a049;
         }
+
+        .support-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 80px;
+        }
+
+        .support-buttons>* {
+            display: inline-block;
+        }
     </style>
 </head>
 
 <body>
-    <h1>Version Check Result</h1>
+    <h2>MouseWrap</h2>
+    <h3 style="margin-top: -10px; margin-bottom: 80px;">Version Check</h3>
+
     <div id="result">Checking version...</div>
-    <button id="downloadBtn">Download Latest Version</button>
+    <button id="downloadBtn">...</button>
+
+    <div class="support-buttons">
+        <!-- Buy me a coffee button -->
+        <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+            data-name="bmc-button" data-slug="danieldownes" data-color="#FFDD00" data-emoji="" data-font="Cookie"
+            data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+            data-coffee-color="#ffffff"></script>
+
+        <!-- Patreon button -->
+        <a href="https://www.patreon.com/bePatron?u=5930946" data-patreon-widget-type="become-patron-button">Become a
+            member!</a>
+    </div>
+    <script async src="https://c6.patreon.com/becomePatronButton.bundle.js"></script>
 
     <script>
         const owner = 'danieldownes';
@@ -104,15 +139,20 @@
 
             const comparison = compareVersions(currentVersion, latestVersion);
 
+            const parsedCurrentVersion = parseVersion(currentVersion).join('.');
+            const parsedLatestVersion = parseVersion(latestVersion).join('.');
+
             if (comparison === 0) {
-                resultDiv.innerHTML = `Version ${currentVersion} is the latest release`;
+                resultDiv.innerHTML = `You have the latest version of MouseWrap. Version ${parsedCurrentVersion}`;
                 resultDiv.style.backgroundColor = '#90EE90'; // Light green
             } else if (comparison > 0) {
-                resultDiv.innerHTML = `Version ${currentVersion} is newer than the latest release (${latestVersion})`;
+                resultDiv.innerHTML = `Lucky you! Version ${parsedCurrentVersion} is newer than the latest release ${parsedLatestVersion}!!!`;
                 resultDiv.style.backgroundColor = '#FFD700'; // Gold
             } else {
-                resultDiv.innerHTML = `Version ${currentVersion} is older than the latest release (${latestVersion})`;
+                resultDiv.innerHTML = `There is a newer version of <b>MouseWrap</b>!<br /><br />
+                    You have version ${parsedCurrentVersion}, but the latest release is <b>${parsedLatestVersion}</b>`;
                 resultDiv.style.backgroundColor = '#FF6347'; // Tomato red
+                downloadBtn.innerHTML = `Download MouseWrap ${parsedLatestVersion}`
                 downloadBtn.style.display = 'block';
             }
         }
@@ -123,6 +163,7 @@
 
         checkVersion();
     </script>
+
 </body>
 
 </html>
