@@ -79,12 +79,7 @@
 
     <div class="support-buttons">
         <!-- Buy me a coffee button placeholder -->
-        <div id="bmc-button-container">
-            <script src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button"
-                data-slug="danieldownes" data-color="#FFDD00" data-emoji="" data-font="Cookie"
-                data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
-                data-coffee-color="#ffffff"></script>
-        </div>
+        <div id="bmc-button-container"></div>
 
         <!-- Patreon button -->
         <a href="https://www.patreon.com/bePatron?u=5930946" data-patreon-widget-type="become-patron-button">Become a
@@ -163,6 +158,20 @@
             window.location.href = `https://github.com/${owner}/${repo}/releases/latest`;
         });
 
+        function loadBmcButton() {
+            const script = document.createElement('script');
+            script.src = "https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js";
+            script.dataset.name = "bmc-button";
+            script.dataset.slug = "danieldownes";
+            script.dataset.color = "#FFDD00";
+            script.dataset.emoji = "";
+            script.dataset.font = "Cookie";
+            script.dataset.text = "Buy me a coffee";
+            script.dataset.outlineColor = "#000000";
+            script.dataset.fontColor = "#000000";
+            script.dataset.coffeeColor = "#ffffff";
+            document.getElementById('bmc-button-container').appendChild(script);
+        }
 
         function loadPatreonButton() {
             const script = document.createElement('script');
@@ -173,6 +182,7 @@
 
         window.addEventListener('load', () => {
             checkVersion();
+            loadBmcButton();
             loadPatreonButton();
         });
     </script>
