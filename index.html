@@ -19,13 +19,13 @@
             background-color: #f0f0f0;
         }
 
-        h2 {
+        h1 {
             margin-bottom: 10px;
         }
 
-        h3 {
-            margin-top: -10px;
-            margin-bottom: 80px;
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
         }
 
         #result {
@@ -59,10 +59,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
-            margin-top: 80px;
+            gap: 30px;
             width: 100%;
-            /* Ensures buttons are centered */
+            margin-top: 80px;
+            margin-left: 120px;
         }
 
         .support-buttons>* {
@@ -73,17 +73,22 @@
 
 <body>
     <h2>MouseWrap</h2>
-    <h3>Version Check</h3>
+    <h3 style="margin-top: -10px; margin-bottom: 80px;">Version Check</h3>
 
     <div id="result">Checking version...</div>
     <button id="downloadBtn">...</button>
 
-    <!-- Buy me a coffee button placeholder -->
-    <div id="bmc-button-container"></div>
+    <div class="support-buttons">
+        <!-- Buy me a coffee button -->
+        <a href="https://buymeacoffee.com/danieldownes/mouse-wrap-4" target="_blank"><img
+                src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee"
+                style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;"></a>
 
-    <!-- Patreon button -->
-    <a href="https://www.patreon.com/bePatron?u=5930946" data-patreon-widget-type="become-patron-button">Become a
-        member!</a>
+        <!-- Patreon button -->
+        <a href="https://www.patreon.com/bePatron?u=5930946" data-patreon-widget-type="become-patron-button">Become a
+            member!</a>
+    </div>
+    <script async src="https://c6.patreon.com/becomePatronButton.bundle.js"></script>
 
     <script>
         const owner = 'danieldownes';
@@ -148,7 +153,7 @@
                 resultDiv.innerHTML = `There is a newer version of <b>MouseWrap</b>!<br /><br />
                     You have version ${parsedCurrentVersion}, but the latest release is <b>${parsedLatestVersion}</b>`;
                 resultDiv.style.backgroundColor = '#FF6347'; // Tomato red
-                downloadBtn.innerHTML = `Download MouseWrap ${parsedLatestVersion}`;
+                downloadBtn.innerHTML = `Download MouseWrap ${parsedLatestVersion}`
                 downloadBtn.style.display = 'block';
             }
         }
@@ -157,34 +162,9 @@
             window.location.href = `https://github.com/${owner}/${repo}/releases/latest`;
         });
 
-        function loadBmcButton() {
-            const bmcScript = document.createElement('script');
-            bmcScript.src = "https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js";
-            bmcScript.dataset.name = "bmc-button";
-            bmcScript.dataset.slug = "danieldownes";
-            bmcScript.dataset.color = "#FFDD00";
-            bmcScript.dataset.emoji = "";
-            bmcScript.dataset.font = "Cookie";
-            bmcScript.dataset.text = "Buy me a coffee";
-            bmcScript.dataset.outlineColor = "#000000";
-            bmcScript.dataset.fontColor = "#000000";
-            bmcScript.dataset.coffeeColor = "#ffffff";
-            document.getElementById('bmc-button-container').appendChild(bmcScript);
-        }
-
-        function loadPatreonButton() {
-            const patreonScript = document.createElement('script');
-            patreonScript.src = "https://c6.patreon.com/becomePatronButton.bundle.js";
-            patreonScript.async = true;
-            document.body.appendChild(patreonScript);
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            checkVersion();
-            loadBmcButton();
-            loadPatreonButton();
-        });
+        checkVersion();
     </script>
+
 </body>
 
 </html>
