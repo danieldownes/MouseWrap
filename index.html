@@ -19,13 +19,13 @@
             background-color: #f0f0f0;
         }
 
-        h1 {
+        h2 {
             margin-bottom: 10px;
         }
 
-        h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
+        h3 {
+            margin-top: -10px;
+            margin-bottom: 80px;
         }
 
         #result {
@@ -71,23 +71,19 @@
 
 <body>
     <h2>MouseWrap</h2>
-    <h3 style="margin-top: -10px; margin-bottom: 80px;">Version Check</h3>
+    <h3>Version Check</h3>
 
     <div id="result">Checking version...</div>
     <button id="downloadBtn">...</button>
 
     <div class="support-buttons">
-        <!-- Buy me a coffee button -->
-        <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
-            data-name="bmc-button" data-slug="danieldownes" data-color="#FFDD00" data-emoji="" data-font="Cookie"
-            data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
-            data-coffee-color="#ffffff"></script>
+        <!-- Buy me a coffee button placeholder -->
+        <div id="bmc-button-container"></div>
 
         <!-- Patreon button -->
         <a href="https://www.patreon.com/bePatron?u=5930946" data-patreon-widget-type="become-patron-button">Become a
             member!</a>
     </div>
-    <script async src="https://c6.patreon.com/becomePatronButton.bundle.js"></script>
 
     <script>
         const owner = 'danieldownes';
@@ -152,7 +148,7 @@
                 resultDiv.innerHTML = `There is a newer version of <b>MouseWrap</b>!<br /><br />
                     You have version ${parsedCurrentVersion}, but the latest release is <b>${parsedLatestVersion}</b>`;
                 resultDiv.style.backgroundColor = '#FF6347'; // Tomato red
-                downloadBtn.innerHTML = `Download MouseWrap ${parsedLatestVersion}`
+                downloadBtn.innerHTML = `Download MouseWrap ${parsedLatestVersion}`;
                 downloadBtn.style.display = 'block';
             }
         }
@@ -161,9 +157,34 @@
             window.location.href = `https://github.com/${owner}/${repo}/releases/latest`;
         });
 
-        checkVersion();
-    </script>
+        function loadBuyMeCoffeeButton() {
+            const script = document.createElement('script');
+            script.src = "https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js";
+            script.dataset.name = "bmc-button";
+            script.dataset.slug = "danieldownes";
+            script.dataset.color = "#FFDD00";
+            script.dataset.emoji = "";
+            script.dataset.font = "Cookie";
+            script.dataset.text = "Buy me a coffee";
+            script.dataset.outlineColor = "#000000";
+            script.dataset.fontColor = "#000000";
+            script.dataset.coffeeColor = "#ffffff";
+            document.getElementById('bmc-button-container').appendChild(script);
+        }
 
+        function loadPatreonButton() {
+            const script = document.createElement('script');
+            script.src = "https://c6.patreon.com/becomePatronButton.bundle.js";
+            script.async = true;
+            document.body.appendChild(script);
+        }
+
+        window.addEventListener('load', () => {
+            checkVersion();
+            loadBuyMeCoffeeButton();
+            loadPatreonButton();
+        });
+    </script>
 </body>
 
 </html>
