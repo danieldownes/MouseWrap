@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Version Checker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semver/7.5.4/semver.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        #result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="result">Checking version...</div>
+
+    <script>
+        const owner = 'danieldownes';
+        const repo = 'mousewrap';
+
+        function getVersionFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('version');
+        }
+
+        async function getLatestRelease() {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`);
+            const data = await response.json();
+            return data.tag_name;
+        }
+
+        async function checkVersion() {
+            const currentVersion = getVersionFromURL();
+            const latestVersion = await getLatestRelease();
+
+            if (!currentVersion) {
+                document.getElementById('result').innerHTML = 'Error: No version specified in URL';
+                return;
+            }
+
+            if (semver.valid(currentVersion) && semver.valid(latestVersion)) {
+                if (semver.eq(currentVersion, latestVersion)) {
+                    document.getElementById('result').innerHTML = `Version ${currentVersion} is the latest release`;
+                } else if (semver.gt(currentVersion, latestVersion)) {
+                    document.getElementById('result').innerHTML = `Version ${currentVersion} is newer than the latest release (${latestVersion})`;
+                } else {
+                    document.getElementById('result').innerHTML = `Version ${currentVersion} is older than the latest release (${latestVersion})`;
+                }
+            } else {
+                document.getElementById('result').innerHTML = 'Error: Invalid version format';
+            }
+        }
+
+        checkVersion();
+    </script>
+</body>
+
+</html>
