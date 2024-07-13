@@ -5,6 +5,7 @@
 #include "resource.h"
 #include <shellapi.h>
 #include <string.h>
+#include "main.h"
 
 extern NOTIFYICONDATA nid;
 

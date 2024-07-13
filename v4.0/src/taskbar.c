@@ -6,6 +6,7 @@
 #define IDM_EXITAPP 1001
 #define IDM_BUYMEACOFFEE 1002
 #define IDM_TOGGLE_STARTUP 1003
+#define IDM_VERSIONCHECK 1004
 
 HINSTANCE hInstMain;
 
@@ -44,7 +45,9 @@ void CreateTrayIcon(HWND hwnd, HINSTANCE hInst)
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
     nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(isDarkTheme ? IDI_ICON_ENABLED_DARK : IDI_ICON_ENABLED_LIGHT));
-    wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"Mouse Wrap");
+
+    //#define TITLE_VERSION WINDOW_TITLE L" " WPRODVER_STR
+    wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), WINDOW_TITLE L" " WPRODVER_STR);
 
     Shell_NotifyIcon(NIM_ADD, &nid);
 }
@@ -65,6 +68,7 @@ void ShowContextMenu(HWND hwnd)
 void CreateContextMenu()
 {
     hMenu = CreatePopupMenu();
+    AppendMenu(hMenu, MF_STRING, IDM_VERSIONCHECK, L"Check for updates");
     AppendMenu(hMenu, MF_STRING, IDM_BUYMEACOFFEE, L"Buy Me a Coffee");
     AppendMenu(hMenu, MF_STRING, IDM_TOGGLE_STARTUP, L"Start with Windows");
     AppendMenu(hMenu, MF_STRING, IDM_EXITAPP, L"Exit");
@@ -89,6 +93,10 @@ void TaskBarCheckCommand(WORD cmd)
 
         case IDM_BUYMEACOFFEE:
             ShellExecute(NULL, L"open", L"https://buymeacoffee.com/danieldownes/mouse-wrap-4", NULL, NULL, SW_SHOWNORMAL);
+            break;
+
+        case IDM_VERSIONCHECK:
+            ShellExecute(NULL, L"open", L"https://danieldownes.github.io/MouseWrap/check/?version=" WPRODVER_STR, NULL, NULL, SW_SHOWNORMAL);
             break;
 
         case IDM_TOGGLE_STARTUP:
