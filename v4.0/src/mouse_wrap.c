@@ -1,6 +1,4 @@
 #include <windows.h>
-#include <stdio.h>
-
 #include "mouse_wrap.h"
 #include "multimonitor_edges.h"
 #include "multimonitor_contour.h"

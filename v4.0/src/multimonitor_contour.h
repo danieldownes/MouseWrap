@@ -1,6 +1,7 @@
 #ifndef MULTIMONITOR_CONTOUR_H
 #define MULTIMONITOR_CONTOUR_H
 
+#include <windows.h>
 #include "multimonitor_edges.h"
 
 typedef struct {

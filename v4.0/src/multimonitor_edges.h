@@ -2,7 +2,6 @@
 #define MULTIMONITOR_EDGES_H
 
 #include <windows.h>
-#include <stdio.h>
 #include <stdbool.h>
 
 typedef struct {
@@ -16,8 +15,7 @@ typedef struct {
 // Edge functions
 me_Edge me_create_edge(int x1, int x2, int y1, int y2);
 bool me_edge_equals(const me_Edge* e1, const me_Edge* e2);
-size_t me_edge_hash(const me_Edge* e);
-void me_edge_to_string(const me_Edge* e, char* buffer, size_t buffer_size);
+SIZE_T me_edge_hash(const me_Edge* e);
 bool me_edge_intersects(const me_Edge* e1, const me_Edge* e2);
 
 // Rectangle functions
