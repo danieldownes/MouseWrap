@@ -4,37 +4,56 @@ public class Contour
 {
     public static List<Edge> GetContour(List<Rectangle> rectangles)
     {
-        var edges = new List<Edge>();
-
+        var allEdges = new List<Edge>();
         foreach (var rect in rectangles)
         {
-            var newEdges = new List<Edge>();
-
-            foreach (var edge in rect.GetEdges())
-            {
-                bool isIntersecting = false;
-
-                foreach (var existingEdge in edges.ToList()) // Iterate over a copy to avoid modification during iteration
-                {
-                    if (edge.Intersects(existingEdge))
-                    {
-                        isIntersecting = true;
-                        newEdges.AddRange(RemoveIntersection(edge, existingEdge));
-                        edges.Remove(existingEdge);
-                        continue;
-                    }
-                }
-
-                if (!isIntersecting)
-                    newEdges.Add(edge);
-            }
-
-            edges.AddRange(newEdges);
+            allEdges.AddRange(rect.GetEdges());
         }
 
-        return edges;
+        var contourEdges = new List<Edge>();
+        // Keep track of indices of edges that have been paired and removed.
+        var removed = new bool[allEdges.Count];
+
+        for (int i = 0; i < allEdges.Count; i++)
+        {
+            if (removed[i])
+            {
+                continue; // This edge was already part of a removed pair
+            }
+
+            bool pairFound = false;
+            for (int j = i + 1; j < allEdges.Count; j++)
+            {
+                if (removed[j])
+                {
+                    continue; // This edge was already part of a removed pair
+                }
+
+                // Edge.Equals checks for geometric equality, ignoring direction.
+                // The constructor normalizes edges, so x1<=x2 and y1<=y2.
+                if (allEdges[i].Equals(allEdges[j]))
+                {
+                    // Found an identical edge. This pair represents an internal shared boundary.
+                    removed[i] = true;
+                    removed[j] = true;
+                    pairFound = true;
+                    break; // Found a pair for allEdges[i], no need to check further for it
+                }
+            }
+
+            if (!pairFound)
+            {
+                // This edge has no identical counterpart, so it's an outer edge.
+                contourEdges.Add(allEdges[i]);
+            }
+        }
+        return contourEdges;
     }
 
+    // The RemoveIntersection method is no longer used by the simplified GetContour.
+    // It can be kept for other purposes or removed if not needed elsewhere.
+    // For now, I will comment it out to indicate it's not part of the active contour logic.
+    /*
     private static List<Edge> RemoveIntersection(Edge edge1, Edge edge2)
     {
         List<Edge> mergedEdges = new List<Edge>();
@@ -70,5 +89,5 @@ public class Contour
 
         return mergedEdges;
     }
-
+    */
 }

@@ -16,6 +16,12 @@
 #define TOSTRING(x) STRINGIFY(x)
 #define WIDEN2(x) L ## x
 #define WIDEN(x) WIDEN2(x)
+
+// Fallback for PRODVER_STR if not defined by the build system
+#ifndef PRODVER_STR
+#define PRODVER_STR "undefined"
+#endif
+
 #define WPRODVER_STR WIDEN(PRODVER_STR)
 
 extern HINSTANCE hInst;
