@@ -52,12 +52,13 @@ Mouse Wrap has been trusted by users worldwide for **25 years**, continuously re
 
 # Latest Download
 
-[Mouse Wrap 4 is release](https://github.com/danieldownes/MouseWrap/releases/tag/v4.0) and supports
+[Mouse Wrap 4 release](https://github.com/danieldownes/MouseWrap/releases/tag/v4.0) and supports
 
- - Multi-monitor aware mouse wrapping.
- - Theme aware traybar icon.
- - No install and portable (depending on vc_redist).
- - 56.5 KB download.
+ - Multi-monitor aware mouse-wrapping
+ - Theme aware traybar icon
+ - No install 
+ - Portable (depending on vc_redist)
+ - 56.5 KB download
 
 
 ## Goals:
