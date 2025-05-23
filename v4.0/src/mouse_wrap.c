@@ -253,11 +253,10 @@ void WrapMouseWhileDragging()
         me_Edge hit_edge = contour_to_use->edges[i];
         BOOL on_edge_vicinity = IsPointNearEdge(current_pos, hit_edge, PIXEL_TOLERANCE);
         
+        char dbg_buf[512]; // Declare dbg_buf here
         POINT new_pos = current_pos;
-        BOOL wrap_logic_applied = FALSE; 
 
         if (on_edge_vicinity) {
-            char dbg_buf[512];
             sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Hit edge %zu: (%ld,%ld)-(%ld,%ld). Cursor: (%ld,%ld). Contour: %s\n",
                 i, hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2,
                 current_pos.x, current_pos.y, contour_type_str);
@@ -268,142 +267,29 @@ void WrapMouseWhileDragging()
                 contour_center_x, contour_center_y);
             OutputDebugStringA(dbg_buf);
 
-            // Specific 2-monitor vertical wrapping logic
-            if (hit_edge.x1 == hit_edge.x2 && monitor_count == 2) {
-                me_Rect m_left_rect, m_right_rect;
-                // Determine which monitor is physically to the left and which is to the right
-                if (monitor_rects_array[0].xMin < monitor_rects_array[1].xMin) {
-                    m_left_rect = monitor_rects_array[0];
-                    m_right_rect = monitor_rects_array[1];
-                } else {
-                    m_left_rect = monitor_rects_array[1];
-                    m_right_rect = monitor_rects_array[0];
-                }
-                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: 2Mon V. M_Left:(%ld,%ld R:%ld B:%ld), M_Right:(%ld,%ld R:%ld B:%ld)\n",
-                    m_left_rect.xMin, m_left_rect.yMin, m_left_rect.xMax, m_left_rect.yMax,
-                    m_right_rect.xMin, m_right_rect.yMin, m_right_rect.xMax, m_right_rect.yMax);
+            // General heuristic for vertical edges
+            if (hit_edge.x1 == hit_edge.x2) {
+                BOOL is_left_edge = (abs(hit_edge.x1 - contour_min_x) <= PIXEL_TOLERANCE);
+                BOOL is_right_edge = (abs(hit_edge.x1 - contour_max_x) <= PIXEL_TOLERANCE);
+                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: V Hit Details. Edge:(%ld,%ld)-(%ld,%ld). Cursor:(%ld,%ld). IsLeftEdge: %s. IsRightEdge: %s\n",
+                    hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2, current_pos.x, current_pos.y, is_left_edge ? "TRUE" : "FALSE", is_right_edge ? "TRUE" : "FALSE");
                 OutputDebugStringA(dbg_buf);
 
-                // Define conceptual edges of the individual monitors
-                me_Edge m_left_rect_L_edge = me_create_edge(m_left_rect.xMin, m_left_rect.xMin, m_left_rect.yMin, m_left_rect.yMax);
-                me_Edge m_left_rect_R_edge = me_create_edge(m_left_rect.xMax, m_left_rect.xMax, m_left_rect.yMin, m_left_rect.yMax);
-                me_Edge m_right_rect_L_edge = me_create_edge(m_right_rect.xMin, m_right_rect.xMin, m_right_rect.yMin, m_right_rect.yMax);
-                me_Edge m_right_rect_R_edge = me_create_edge(m_right_rect.xMax, m_right_rect.xMax, m_right_rect.yMin, m_right_rect.yMax);
+                new_pos.x = is_left_edge ? (contour_max_x - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
+                new_pos.y = max(contour_min_y, min(current_pos.y, contour_max_y));
+                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: V Fallback Result. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y);
+                OutputDebugStringA(dbg_buf);
+            } else { // Hit a horizontal edge (hit_edge.y1 == hit_edge.y2)
+                BOOL is_top_edge = (abs(hit_edge.y1 - contour_min_y) <= PIXEL_TOLERANCE);
+                BOOL is_bottom_edge = (abs(hit_edge.y1 - contour_max_y) <= PIXEL_TOLERANCE);
+                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Hit Details. Edge:(%ld,%ld)-(%ld,%ld). Cursor:(%ld,%ld). IsTopEdge: %s. IsBottomEdge: %s\n",
+                    hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2, current_pos.x, current_pos.y, is_top_edge ? "TRUE" : "FALSE", is_bottom_edge ? "TRUE" : "FALSE");
+                OutputDebugStringA(dbg_buf);
 
-                // Check for internal pass-through condition
-                if (m_left_rect.xMax == m_right_rect.xMin) { // Monitors are perfectly adjacent
-                    BOOL is_pass_through = FALSE;
-                    // Case 1: Cursor hits right edge of left monitor, check if it can pass into right monitor
-                    if (me_edge_equals(&hit_edge, &m_left_rect_R_edge) &&
-                        (current_pos.y >= m_right_rect.yMin && current_pos.y <= m_right_rect.yMax)) {
-                        is_pass_through = TRUE;
-                    }
-                    // Case 2: Cursor hits left edge of right monitor, check if it can pass into left monitor
-                    else if (me_edge_equals(&hit_edge, &m_right_rect_L_edge) &&
-                             (current_pos.y >= m_left_rect.yMin && current_pos.y <= m_left_rect.yMax)) {
-                        is_pass_through = TRUE;
-                    }
-
-                    if (is_pass_through) {
-                        sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: 2Mon Internal Pass-through at X=%ld. No teleport.\n", m_left_rect.xMax);
-                        OutputDebugStringA(dbg_buf);
-                        return; // Exit: cursor passes naturally, no SetCursorPos needed for this event
-                    }
-                }
-
-                // If not a pass-through, apply standard 2-monitor exterior wrapping logic
-                if (me_edge_equals(&hit_edge, &m_left_rect_L_edge)) { // Hit M_Left's Left edge
-                    new_pos.x = m_right_rect.xMax - WRAP_OFFSET;
-                    new_pos.y = max(m_right_rect.yMin, min(current_pos.y, m_right_rect.yMax));
-                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: 2Mon Case: M_Left_L to M_Right_R. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y); OutputDebugStringA(dbg_buf);
-                    wrap_logic_applied = TRUE;
-                } else if (me_edge_equals(&hit_edge, &m_left_rect_R_edge)) { // Hit M_Left's Right edge (and not pass-through)
-                    new_pos.x = m_right_rect.xMin + WRAP_OFFSET;
-                    new_pos.y = max(m_right_rect.yMin, min(current_pos.y, m_right_rect.yMax));
-                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: 2Mon Case: M_Left_R to M_Right_L. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y); OutputDebugStringA(dbg_buf);
-                    wrap_logic_applied = TRUE;
-                } else if (me_edge_equals(&hit_edge, &m_right_rect_L_edge)) { // Hit M_Right's Left edge (and not pass-through)
-                    new_pos.x = m_left_rect.xMax - WRAP_OFFSET;
-                    new_pos.y = max(m_left_rect.yMin, min(current_pos.y, m_left_rect.yMax));
-                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: 2Mon Case: M_Right_L to M_Left_R. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y); OutputDebugStringA(dbg_buf);
-                    wrap_logic_applied = TRUE;
-                } else if (me_edge_equals(&hit_edge, &m_right_rect_R_edge)) { // Hit M_Right's Right edge
-                    new_pos.x = m_left_rect.xMin + WRAP_OFFSET;
-                    new_pos.y = max(m_left_rect.yMin, min(current_pos.y, m_left_rect.yMax));
-                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: 2Mon Case: M_Right_R to M_Left_L. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y); OutputDebugStringA(dbg_buf);
-                    wrap_logic_applied = TRUE;
-                }
-            }
-            
-            if (!wrap_logic_applied) { // General heuristic or horizontal edge or not 2 monitors for V-edge, or 2-mon logic decided not to apply (e.g. edge didn't match)
-                 if (hit_edge.x1 == hit_edge.x2) { // Hit a vertical edge (general heuristic)
-                    BOOL is_left_ish_hit = (hit_edge.x1 < contour_center_x);
-                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Vertical hit (gen heuristic). IsLeft-ish: %s.\n", is_left_ish_hit ? "TRUE" : "FALSE"); OutputDebugStringA(dbg_buf);
-                    for (SIZE_T j = 0; j < contour_to_use->size; j++) {
-                        if (i == j) continue; 
-                        me_Edge candidate_edge = contour_to_use->edges[j];
-                        if (candidate_edge.x1 == candidate_edge.x2) { 
-                            BOOL is_candidate_opposite_side = (is_left_ish_hit && candidate_edge.x1 > contour_center_x) ||
-                                                              (!is_left_ish_hit && candidate_edge.x1 < contour_center_x);
-                            if (is_candidate_opposite_side) {
-                                if (current_pos.y >= candidate_edge.y1 && current_pos.y <= candidate_edge.y2) {
-                                    new_pos.x = candidate_edge.x1 + (is_left_ish_hit ? -WRAP_OFFSET : WRAP_OFFSET);
-                                    wrap_logic_applied = TRUE;
-                                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Found V candidate (gen) %zu. NewX: %ld\n", j, new_pos.x); OutputDebugStringA(dbg_buf);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (!wrap_logic_applied) {
-                        new_pos.x = is_left_ish_hit ? (contour_max_x - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
-                        new_pos.y = max(contour_min_y, min(current_pos.y, contour_max_y));
-                        sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: V Fallback (gen). NewX: %ld, NewY: %ld\n", new_pos.x, new_pos.y);
-                        OutputDebugStringA(dbg_buf);
-                        wrap_logic_applied = TRUE; // Fallback is also an applied logic
-                    }
-                } else { // Hit a horizontal edge (hit_edge.y1 == hit_edge.y2)
-                    BOOL is_top_edge = (abs(hit_edge.y1 - contour_min_y) <= PIXEL_TOLERANCE);
-                    BOOL is_bottom_edge = (abs(hit_edge.y1 - contour_max_y) <= PIXEL_TOLERANCE);
-                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Hit Details. Edge:(%ld,%ld)-(%ld,%ld). Cursor:(%ld,%ld). IsTopEdge: %s. IsBottomEdge: %s\n",
-                        hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2, current_pos.x, current_pos.y, is_top_edge ? "TRUE" : "FALSE", is_bottom_edge ? "TRUE" : "FALSE");
-                    OutputDebugStringA(dbg_buf);
-
-                    for (SIZE_T j = 0; j < contour_to_use->size; j++) {
-                         if (i == j) continue;
-                        me_Edge candidate_edge = contour_to_use->edges[j];
-                        if (candidate_edge.y1 == candidate_edge.y2) { // Is candidate horizontal?
-                            BOOL is_candidate_top_edge = (abs(candidate_edge.y1 - contour_min_y) <= PIXEL_TOLERANCE);
-                            BOOL is_candidate_bottom_edge = (abs(candidate_edge.y1 - contour_max_y) <= PIXEL_TOLERANCE);
-
-                            if ((is_top_edge && is_candidate_bottom_edge) || (is_bottom_edge && is_candidate_top_edge)) {
-                                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Candidate %zu:(%ld,%ld)-(%ld,%ld) considered. CursorX:%ld in [%ld,%ld]?\n",
-                                    j, candidate_edge.x1, candidate_edge.y1, candidate_edge.x2, candidate_edge.y2,
-                                    current_pos.x, candidate_edge.x1, candidate_edge.x2);
-                                OutputDebugStringA(dbg_buf);
-                                if (current_pos.x >= candidate_edge.x1 && current_pos.x <= candidate_edge.x2) {
-                                    new_pos.y = candidate_edge.y1 + (is_top_edge ? -WRAP_OFFSET : WRAP_OFFSET);
-                                    // new_pos.x remains current_pos.x
-                                    wrap_logic_applied = TRUE;
-                                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Found H candidate (gen) %zu. Edge:(%ld,%ld)-(%ld,%ld). NewY: %ld. CursorX kept: %ld\n",
-                                        j, candidate_edge.x1, candidate_edge.y1, candidate_edge.x2, candidate_edge.y2, new_pos.y, current_pos.x);
-                                    OutputDebugStringA(dbg_buf);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (!wrap_logic_applied) {
-                        sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H No candidate found. Applying Fallback. IsTopEdge:%s. IsBottomEdge:%s. ContourMin/Max Y:(%ld,%ld). CursorX:%ld. ContourMin/Max X:(%ld,%ld)\n",
-                            is_top_edge ? "TRUE" : "FALSE", is_bottom_edge ? "TRUE" : "FALSE", contour_min_y, contour_max_y, current_pos.x, contour_min_x, contour_max_x);
-                        OutputDebugStringA(dbg_buf);
-                        new_pos.y = is_top_edge ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
-                        new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x));
-                        sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Fallback Result. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y);
-                        OutputDebugStringA(dbg_buf);
-                        wrap_logic_applied = TRUE; // Fallback is also an applied logic
-                    }
-                }
+                new_pos.y = is_top_edge ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
+                new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x));
+                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Fallback Result. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y);
+                OutputDebugStringA(dbg_buf);
             }
             
             sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Final NewPos after H/V logic: (%ld,%ld)\n", new_pos.x, new_pos.y);
