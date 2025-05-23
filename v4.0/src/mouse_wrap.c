@@ -363,24 +363,26 @@ void WrapMouseWhileDragging()
                         wrap_logic_applied = TRUE; // Fallback is also an applied logic
                     }
                 } else { // Hit a horizontal edge (hit_edge.y1 == hit_edge.y2)
-                    BOOL is_top_ish_hit = (hit_edge.y1 < contour_center_y);
-                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Hit Details. Edge:(%ld,%ld)-(%ld,%ld). Cursor:(%ld,%ld). IsTop-ish: %s. CenterY:%ld\n",
-                        hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2, current_pos.x, current_pos.y, is_top_ish_hit ? "TRUE" : "FALSE", contour_center_y);
+                    BOOL is_top_edge = (abs(hit_edge.y1 - contour_min_y) <= PIXEL_TOLERANCE);
+                    BOOL is_bottom_edge = (abs(hit_edge.y1 - contour_max_y) <= PIXEL_TOLERANCE);
+                    sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Hit Details. Edge:(%ld,%ld)-(%ld,%ld). Cursor:(%ld,%ld). IsTopEdge: %s. IsBottomEdge: %s\n",
+                        hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2, current_pos.x, current_pos.y, is_top_edge ? "TRUE" : "FALSE", is_bottom_edge ? "TRUE" : "FALSE");
                     OutputDebugStringA(dbg_buf);
 
                     for (SIZE_T j = 0; j < contour_to_use->size; j++) {
                          if (i == j) continue;
                         me_Edge candidate_edge = contour_to_use->edges[j];
                         if (candidate_edge.y1 == candidate_edge.y2) { // Is candidate horizontal?
-                            BOOL is_candidate_opposite_side = (is_top_ish_hit && candidate_edge.y1 > contour_center_y) ||
-                                                              (!is_top_ish_hit && candidate_edge.y1 < contour_center_y);
-                            if (is_candidate_opposite_side) {
+                            BOOL is_candidate_top_edge = (abs(candidate_edge.y1 - contour_min_y) <= PIXEL_TOLERANCE);
+                            BOOL is_candidate_bottom_edge = (abs(candidate_edge.y1 - contour_max_y) <= PIXEL_TOLERANCE);
+
+                            if ((is_top_edge && is_candidate_bottom_edge) || (is_bottom_edge && is_candidate_top_edge)) {
                                 sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Candidate %zu:(%ld,%ld)-(%ld,%ld) considered. CursorX:%ld in [%ld,%ld]?\n",
                                     j, candidate_edge.x1, candidate_edge.y1, candidate_edge.x2, candidate_edge.y2,
                                     current_pos.x, candidate_edge.x1, candidate_edge.x2);
                                 OutputDebugStringA(dbg_buf);
                                 if (current_pos.x >= candidate_edge.x1 && current_pos.x <= candidate_edge.x2) {
-                                    new_pos.y = candidate_edge.y1 + (is_top_ish_hit ? -WRAP_OFFSET : WRAP_OFFSET);
+                                    new_pos.y = candidate_edge.y1 + (is_top_edge ? -WRAP_OFFSET : WRAP_OFFSET);
                                     // new_pos.x remains current_pos.x
                                     wrap_logic_applied = TRUE;
                                     sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Found H candidate (gen) %zu. Edge:(%ld,%ld)-(%ld,%ld). NewY: %ld. CursorX kept: %ld\n",
@@ -392,10 +394,10 @@ void WrapMouseWhileDragging()
                         }
                     }
                     if (!wrap_logic_applied) {
-                        sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H No candidate found. Applying Fallback. IsTop-ish:%s. ContourMin/Max Y:(%ld,%ld). CursorX:%ld. ContourMin/Max X:(%ld,%ld)\n",
-                            is_top_ish_hit ? "TRUE" : "FALSE", contour_min_y, contour_max_y, current_pos.x, contour_min_x, contour_max_x);
+                        sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H No candidate found. Applying Fallback. IsTopEdge:%s. IsBottomEdge:%s. ContourMin/Max Y:(%ld,%ld). CursorX:%ld. ContourMin/Max X:(%ld,%ld)\n",
+                            is_top_edge ? "TRUE" : "FALSE", is_bottom_edge ? "TRUE" : "FALSE", contour_min_y, contour_max_y, current_pos.x, contour_min_x, contour_max_x);
                         OutputDebugStringA(dbg_buf);
-                        new_pos.y = is_top_ish_hit ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
+                        new_pos.y = is_top_edge ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
                         new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x));
                         sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Fallback Result. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y);
                         OutputDebugStringA(dbg_buf);
