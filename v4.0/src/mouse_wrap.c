@@ -209,6 +209,7 @@ void WrapMouseWhileDragging()
     me_Rect* monitor_rects_array = NULL;
     SIZE_T monitor_count = 0;
     const char* contour_type_str = "";
+    char dbg_buf[512]; // Declare dbg_buf here
 
     if (g_use_workspace_contour) {
         if (!wrapEnabled || g_workspace_contour == NULL || g_workspace_contour->size == 0) {
@@ -253,7 +254,6 @@ void WrapMouseWhileDragging()
         me_Edge hit_edge = contour_to_use->edges[i];
         BOOL on_edge_vicinity = IsPointNearEdge(current_pos, hit_edge, PIXEL_TOLERANCE);
         
-        char dbg_buf[512]; // Declare dbg_buf here
         POINT new_pos = current_pos;
 
         if (on_edge_vicinity) {
@@ -267,38 +267,26 @@ void WrapMouseWhileDragging()
                 contour_center_x, contour_center_y);
             OutputDebugStringA(dbg_buf);
 
-            // General heuristic for vertical edges
-            if (hit_edge.x1 == hit_edge.x2) {
-                BOOL is_left_edge = (abs(hit_edge.x1 - contour_min_x) <= PIXEL_TOLERANCE);
-                BOOL is_right_edge = (abs(hit_edge.x1 - contour_max_x) <= PIXEL_TOLERANCE);
-                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: V Hit Details. Edge:(%ld,%ld)-(%ld,%ld). Cursor:(%ld,%ld). IsLeftEdge: %s. IsRightEdge: %s\n",
-                    hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2, current_pos.x, current_pos.y, is_left_edge ? "TRUE" : "FALSE", is_right_edge ? "TRUE" : "FALSE");
-                OutputDebugStringA(dbg_buf);
-
-                new_pos.x = is_left_edge ? (contour_max_x - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
+            if (hit_edge.x1 == hit_edge.x2) { // Vertical edge
+                BOOL is_left_ish_hit = (hit_edge.x1 < contour_center_x);
+                new_pos.x = is_left_ish_hit ? (contour_max_x - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
                 new_pos.y = max(contour_min_y, min(current_pos.y, contour_max_y));
-                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: V Fallback Result. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y);
+                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: V Edge Hit. IsLeft-ish: %s. NewPos:(%ld,%ld)\n",
+                    is_left_ish_hit ? "TRUE" : "FALSE", new_pos.x, new_pos.y);
                 OutputDebugStringA(dbg_buf);
-            } else { // Hit a horizontal edge (hit_edge.y1 == hit_edge.y2)
-                BOOL is_top_edge = (abs(hit_edge.y1 - contour_min_y) <= PIXEL_TOLERANCE);
-                BOOL is_bottom_edge = (abs(hit_edge.y1 - contour_max_y) <= PIXEL_TOLERANCE);
-                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Hit Details. Edge:(%ld,%ld)-(%ld,%ld). Cursor:(%ld,%ld). IsTopEdge: %s. IsBottomEdge: %s\n",
-                    hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2, current_pos.x, current_pos.y, is_top_edge ? "TRUE" : "FALSE", is_bottom_edge ? "TRUE" : "FALSE");
-                OutputDebugStringA(dbg_buf);
-
-                new_pos.y = is_top_edge ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
+            } else { // Horizontal edge (hit_edge.y1 == hit_edge.y2)
+                BOOL is_top_ish_hit = (hit_edge.y1 < contour_center_y);
+                new_pos.y = is_top_ish_hit ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
                 new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x));
-                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Fallback Result. NewPos:(%ld,%ld)\n", new_pos.x, new_pos.y);
+                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Edge Hit. IsTop-ish: %s. NewPos:(%ld,%ld)\n",
+                    is_top_ish_hit ? "TRUE" : "FALSE", new_pos.x, new_pos.y);
                 OutputDebugStringA(dbg_buf);
             }
             
-            sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Final NewPos after H/V logic: (%ld,%ld)\n", new_pos.x, new_pos.y);
-            OutputDebugStringA(dbg_buf);
-
             if (new_pos.x != current_pos.x || new_pos.y != current_pos.y) {
                  SetCursorPos(new_pos.x, new_pos.y);
             }
-            return;
+            return; // Only wrap once per event
         }
     }
 }
