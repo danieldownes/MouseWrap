@@ -1,4 +1,4 @@
-# Mouse Wrap: Seamless Desktop Navigation
+Mouse Wrap: Seamless Desktop Navigation
 
 **Transform your Windows desktop experience with infinite mouse movement**
 
@@ -45,14 +45,13 @@ Mouse Wrap has been trusted by users worldwide for **25 years**, continuously re
 
 **Love what Mouse Wrap does for your productivity?** Support continued development with a coffee! Your contribution helps maintain this beloved utility that thousands rely on daily.
 
-[☕ Buy Me a Coffee](https://buymeacoffee.com/danieldownes/mouse-wrap-4)  
-[❤️ Sponsor me on GitHub (one-time or monthly)](https://github.com/sponsors/danieldownes)
-
+☕ [Buy Me a Coffee](https://buymeacoffee.com/danieldownes/mouse-wrap-4)  
+❤️ [Sponsor me on GitHub](https://github.com/sponsors/danieldownes) (one-time or monthly)
 *I make this for fun, with love and for my own usage. However I get a kick out of every contribution, no matter the size. Your contribution is deeply appreciated and directly supports ongoing development and maintenance.*
 
 # Latest Download
 
-[Mouse Wrap 4 release](https://github.com/danieldownes/MouseWrap/releases/tag/v4.0) and supports
+[Mouse Wrap 4 release](https://github.com/danieldownes/MouseWrap/releases/tag/v4.0)
 
  - Multi-monitor aware mouse-wrapping
  - Theme aware traybar icon
@@ -71,15 +70,15 @@ Mouse Wrap has been trusted by users worldwide for **25 years**, continuously re
 
 
 ## Roadmap:
- [x] 1. Basic mouse wrapping on a single desktop.
- [x] 2. Edge case, consider task bar placement while dragging windows. 
- [x] 3. Tray icon with toggle control.
- [x] 4. Add/Remove to Windows Startup support (without installer).
- [x] 5. Ensure single-instance only can run.
- [ ] 6. Text-based option file.
- [x] 7. Multi-monitor support.
- [ ] 8. Linux support.
- [ ] 9. Mac support.
+ [x] 1. Basic mouse wrapping on a single desktop.  
+ [x] 2. Edge case, consider task bar placement while dragging windows.   
+ [x] 3. Tray icon with toggle control.  
+ [x] 4. Add/Remove to Windows Startup support (without installer).  
+ [x] 5. Ensure single-instance only can run.  
+ [ ] 6. Text-based option file.  
+ [x] 7. Multi-monitor support.  
+ [ ] 8. Native Linux support.  
+ [ ] 9. Native Mac support.  
 
 ## Multi-monitor support
 
