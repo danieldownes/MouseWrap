@@ -18,7 +18,6 @@ me_Rect* g_monitor_rects_workspace = NULL;
 SIZE_T g_monitor_count_workspace = 0;
 
 BOOL wrapEnabled = TRUE;
-BOOL g_use_workspace_contour = FALSE; // FALSE = Desktop, TRUE = Workspace. Default to Desktop.
 
 typedef struct {
     POINT pt;
@@ -206,46 +205,22 @@ BOOL IsPointNearEdge(POINT pt, me_Edge edge, int tolerance) {
     return FALSE;
 }
 
-// --- START OF REPLACEMENT FOR WrapMouseWhileDragging ---
-void WrapMouseWhileDragging()
+// Check a contour for an edge hit and wrap the cursor if found.
+// Returns TRUE if a wrap was performed.
+static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const char* contour_type_str)
 {
-    EdgeList* contour_to_use = NULL;
-    me_Rect* monitor_rects_array = NULL;
-    SIZE_T monitor_count = 0;
-    const char* contour_type_str = "";
-    char dbg_buf[512]; // Declare dbg_buf here
+    if (contour == NULL || contour->size == 0) return FALSE;
 
-    if (g_use_workspace_contour) {
-        if (!wrapEnabled || g_workspace_contour == NULL || g_workspace_contour->size == 0) {
-            return;
-        }
-        contour_to_use = g_workspace_contour;
-        monitor_rects_array = g_monitor_rects_workspace;
-        monitor_count = g_monitor_count_workspace;
-        contour_type_str = "Workspace";
-    } else {
-        if (!wrapEnabled || g_desktop_contour == NULL || g_desktop_contour->size == 0) {
-            return;
-        }
-        contour_to_use = g_desktop_contour;
-        monitor_rects_array = g_monitor_rects_desktop;
-        monitor_count = g_monitor_count_desktop;
-        contour_type_str = "Desktop";
-    }
-    
-    if (contour_to_use == NULL || contour_to_use->size == 0) return; // Should be caught above, but defensive
+    char dbg_buf[512];
 
-    POINT current_pos;
-    GetCursorPos(&current_pos);
+    // Calculate bounding box
+    long contour_min_x = contour->edges[0].x1;
+    long contour_max_x = contour->edges[0].x1;
+    long contour_min_y = contour->edges[0].y1;
+    long contour_max_y = contour->edges[0].y1;
 
-    // Calculate bounding box of the contour_to_use
-    long contour_min_x = contour_to_use->edges[0].x1;
-    long contour_max_x = contour_to_use->edges[0].x1;
-    long contour_min_y = contour_to_use->edges[0].y1;
-    long contour_max_y = contour_to_use->edges[0].y1;
-
-    for (SIZE_T k = 0; k < contour_to_use->size; ++k) {
-        me_Edge ce = contour_to_use->edges[k];
+    for (SIZE_T k = 0; k < contour->size; ++k) {
+        me_Edge ce = contour->edges[k];
         contour_min_x = min(contour_min_x, ce.x1);
         contour_max_x = max(contour_max_x, ce.x2);
         contour_min_y = min(contour_min_y, ce.y1);
@@ -254,44 +229,60 @@ void WrapMouseWhileDragging()
     long contour_center_x = contour_min_x + (contour_max_x - contour_min_x) / 2;
     long contour_center_y = contour_min_y + (contour_max_y - contour_min_y) / 2;
 
-    for (SIZE_T i = 0; i < contour_to_use->size; i++) {
-        me_Edge hit_edge = contour_to_use->edges[i];
-        BOOL on_edge_vicinity = IsPointNearEdge(current_pos, hit_edge, PIXEL_TOLERANCE);
-        
+    for (SIZE_T i = 0; i < contour->size; i++) {
+        me_Edge hit_edge = contour->edges[i];
+        if (!IsPointNearEdge(current_pos, hit_edge, PIXEL_TOLERANCE))
+            continue;
+
         POINT new_pos = current_pos;
 
-        if (on_edge_vicinity) {
-            sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Hit edge %zu: (%ld,%ld)-(%ld,%ld). Cursor: (%ld,%ld). Contour: %s\n",
-                i, hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2,
-                current_pos.x, current_pos.y, contour_type_str);
-            OutputDebugStringA(dbg_buf);
+        sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: Hit edge %zu: (%ld,%ld)-(%ld,%ld). Cursor: (%ld,%ld). Contour: %s\n",
+            i, hit_edge.x1, hit_edge.y1, hit_edge.x2, hit_edge.y2,
+            current_pos.x, current_pos.y, contour_type_str);
+        OutputDebugStringA(dbg_buf);
 
-            sprintf_s(dbg_buf, sizeof(dbg_buf), "ContourBB: (%ld,%ld)-(%ld,%ld). Center: (%ld,%ld)\n",
-                contour_min_x, contour_min_y, contour_max_x, contour_max_y,
-                contour_center_x, contour_center_y);
-            OutputDebugStringA(dbg_buf);
-
-            if (hit_edge.x1 == hit_edge.x2) { // Vertical edge
-                BOOL is_left_ish_hit = (hit_edge.x1 < contour_center_x);
-                new_pos.x = is_left_ish_hit ? (contour_max_x - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
-                new_pos.y = max(contour_min_y, min(current_pos.y, contour_max_y));
-                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: V Edge Hit. IsLeft-ish: %s. NewPos:(%ld,%ld)\n",
-                    is_left_ish_hit ? "TRUE" : "FALSE", new_pos.x, new_pos.y);
-                OutputDebugStringA(dbg_buf);
-            } else { // Horizontal edge (hit_edge.y1 == hit_edge.y2)
-                BOOL is_top_ish_hit = (hit_edge.y1 < contour_center_y);
-                new_pos.y = is_top_ish_hit ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
-                new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x));
-                sprintf_s(dbg_buf, sizeof(dbg_buf), "Wrap: H Edge Hit. IsTop-ish: %s. NewPos:(%ld,%ld)\n",
-                    is_top_ish_hit ? "TRUE" : "FALSE", new_pos.x, new_pos.y);
-                OutputDebugStringA(dbg_buf);
-            }
-            
-            if (new_pos.x != current_pos.x || new_pos.y != current_pos.y) {
-                 SetCursorPos(new_pos.x, new_pos.y);
-            }
-            return; // Only wrap once per event
+        if (hit_edge.x1 == hit_edge.x2) { // Vertical edge
+            BOOL is_left_ish_hit = (hit_edge.x1 < contour_center_x);
+            new_pos.x = is_left_ish_hit ? (contour_max_x - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
+            new_pos.y = max(contour_min_y, min(current_pos.y, contour_max_y));
+        } else { // Horizontal edge
+            BOOL is_top_ish_hit = (hit_edge.y1 < contour_center_y);
+            new_pos.y = is_top_ish_hit ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
+            new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x));
         }
+
+        if (new_pos.x != current_pos.x || new_pos.y != current_pos.y) {
+            SetCursorPos(new_pos.x, new_pos.y);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// How many timer ticks between workspace contour checks.
+// The workspace contour catches cursor stuck at taskbar edges during window
+// drags.  Checking every 5th tick (~100 ms at WRAP_DELAY=20) keeps CPU low.
+#define WORKSPACE_CHECK_INTERVAL 5
+
+void WrapMouseWhileDragging()
+{
+    static int workspace_tick = 0;
+
+    if (!wrapEnabled) return;
+
+    POINT current_pos;
+    GetCursorPos(&current_pos);
+
+    // Primary: always check desktop contour
+    if (TryWrapAgainstContour(current_pos, g_desktop_contour, "Desktop"))
+        return;
+
+    // Fallback: check workspace contour less frequently to handle
+    // cursor stuck at taskbar / work-area boundary during window drags.
+    workspace_tick++;
+    if (workspace_tick >= WORKSPACE_CHECK_INTERVAL) {
+        workspace_tick = 0;
+        TryWrapAgainstContour(current_pos, g_workspace_contour, "Workspace");
     }
 }
 

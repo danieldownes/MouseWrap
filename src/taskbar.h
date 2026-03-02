@@ -7,8 +7,6 @@
 #include "main.h"
 #include "mouse_wrap.h"
 
-extern NOTIFYICONDATA nid;
-
 void CreateTrayIcon(HWND hwnd, HINSTANCE hInst);
 void ShowContextMenu(HWND hwnd);
 void CreateContextMenu(void);

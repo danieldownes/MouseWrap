@@ -9,7 +9,6 @@
 #define WRAP_DELAY 20
 
 extern BOOL wrapEnabled;
-extern BOOL g_use_workspace_contour;
 
 void ToggleWrapEnabled(HWND hwnd);
 void WrapMouseWhileDragging();

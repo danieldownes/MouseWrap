@@ -3,14 +3,15 @@
 CC ?= gcc
 
 # --- Main application ---
-CFLAGS  = -std=c17 -Wall -Wextra -pedantic
-LDFLAGS = -mwindows -luser32 -lshell32 -ladvapi32 -lshcore
+CFLAGS  = -std=c17 -Wall -Wextra -pedantic -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00
+LDFLAGS = -mwindows -municode -luser32 -lshell32 -ladvapi32 -lshcore
 
 SRCS = src/main.c src/mouse_wrap.c src/multimonitor_contour.c \
        src/multimonitor_edges.c src/taskbar.c src/startup.c
 HEADERS = src/main.h src/mouse_wrap.h src/multimonitor_contour.h \
           src/multimonitor_edges.h src/taskbar.h src/startup.h src/resource.h
 OBJS = $(SRCS:.c=.o)
+RES_OBJ = src/MW4_res.o
 
 BIN = bin/MouseWrap4
 
@@ -33,13 +34,17 @@ TEST_BIN     = test_runner
 all: $(BIN)
 
 # Build main binary
-$(BIN): $(OBJS)
+$(BIN): $(OBJS) $(RES_OBJ)
 	@mkdir -p bin
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+	$(CC) $(OBJS) $(RES_OBJ) -o $@ $(LDFLAGS)
 
 # Compile application source files
 src/%.o: src/%.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile Windows resource file (icons, version info)
+$(RES_OBJ): src/MW4.rc src/resource.h src/mw4.ico src/mw4-disabled.ico src/mw4-light.ico src/mw4-disabled-light.ico
+	windres -DUNICODE -D_UNICODE $< -o $@
 
 # --- Test targets ---
 test/unity/unity.o: test/unity/unity.c test/unity/unity.h test/unity/unity_internals.h
@@ -54,4 +59,4 @@ test: $(TEST_APP_OBJS) $(TEST_OBJS)
 
 # Clean
 clean:
-	rm -f $(OBJS) $(TEST_OBJS) $(TEST_APP_OBJS) $(BIN) $(TEST_BIN)
+	rm -f $(OBJS) $(RES_OBJ) $(TEST_OBJS) $(TEST_APP_OBJS) $(BIN) $(TEST_BIN)

@@ -3,12 +3,14 @@
 #include <windows.h>
 #include <ShellScalingApi.h> // For SetProcessDpiAwarenessContext
 
-#pragma comment(lib, "Shcore.lib") // Link against Shcore.lib for DPI awareness functions
+#ifdef _MSC_VER
+#pragma comment(lib, "Shcore.lib") // MSVC: link Shcore.lib for DPI awareness functions
+#endif
 
 HINSTANCE hInst;
 HANDLE hMutexSingleInstance;
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
     // Set DPI awareness to Per-Monitor DPI Aware V2
     // This should be one of the first calls in the application

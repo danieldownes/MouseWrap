@@ -6,7 +6,6 @@
 #define IDM_BUYMEACOFFEE 1002
 #define IDM_TOGGLE_STARTUP 1003
 #define IDM_VERSIONCHECK 1004
-#define IDM_TOGGLE_CONTOUR 1005
 
 HINSTANCE hInstMain;
 static NOTIFYICONDATA nid;
@@ -106,7 +105,6 @@ void ShowContextMenu(HWND hwnd)
     GetCursorPos(&pt);
     SetForegroundWindow(hwnd);
     CheckMenuItem(hMenu, IDM_TOGGLE_STARTUP, MF_BYCOMMAND | (IsStartupKeySet() ? MF_CHECKED : MF_UNCHECKED));
-    CheckMenuItem(hMenu, IDM_TOGGLE_CONTOUR, MF_BYCOMMAND | (g_use_workspace_contour ? MF_CHECKED : MF_UNCHECKED));
     TrackPopupMenuEx(hMenu, TPM_RIGHTBUTTON | TPM_RECURSE | TPM_VERNEGANIMATION, pt.x, pt.y, hwnd, NULL);
 }
 
@@ -116,7 +114,6 @@ void CreateContextMenu(void)
     AppendMenuW(hMenu, MF_STRING, IDM_VERSIONCHECK, L"Check for updates");
     AppendMenuW(hMenu, MF_STRING, IDM_BUYMEACOFFEE, L"Buy Me a Coffee");
     AppendMenuW(hMenu, MF_STRING, IDM_TOGGLE_STARTUP, L"Start with Windows");
-    AppendMenuW(hMenu, MF_STRING, IDM_TOGGLE_CONTOUR, L"Wrap within workspace");
     AppendMenuW(hMenu, MF_STRING, IDM_EXITAPP, L"Exit");
 }
 
@@ -146,9 +143,6 @@ void TaskBarCheckCommand(WORD cmd)
             RemoveFromStartup();
         else
             AddToStartup();
-        break;
-    case IDM_TOGGLE_CONTOUR:
-        g_use_workspace_contour = !g_use_workspace_contour;
         break;
     }
 }
