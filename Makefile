@@ -1,42 +1,57 @@
-# Makefile
+# Makefile for MouseWrap4
 
-# Compiler and linker
-CC = x86_64-w64-mingw32-gcc
+CC ?= gcc
 
-# Common flags
-CFLAGS = -std=c17 -Wall -Wextra -pedantic -I/mingw64/x86_64-w64-mingw32/include
-LDFLAGS = /nologo /subsystem:windows
-RES = resource.res
+# --- Main application ---
+CFLAGS  = -std=c17 -Wall -Wextra -pedantic
+LDFLAGS = -mwindows -luser32 -lshell32 -ladvapi32 -lshcore
 
-# Source files
-SRCS = src/main.c src/mouse_wrap.c
-HEADERS = src/main.h src/mouse_wrap.h
+SRCS = src/main.c src/mouse_wrap.c src/multimonitor_contour.c \
+       src/multimonitor_edges.c src/taskbar.c src/startup.c
+HEADERS = src/main.h src/mouse_wrap.h src/multimonitor_contour.h \
+          src/multimonitor_edges.h src/taskbar.h src/startup.h src/resource.h
+OBJS = $(SRCS:.c=.o)
 
-# Test source files
-TEST_SRCS = test/test_main.c test/unity/unity.c
-TEST_OBJS = $(TEST_SRCS:.c=.o)
-
-# Binaries
 BIN = bin/MouseWrap4
-TEST_BIN = test_bin
+
+# --- Tests ---
+# Only the modules under test — no main.c, taskbar.c, startup.c (they need UI/registry)
+TEST_APP_SRCS = src/mouse_wrap.c src/multimonitor_contour.c src/multimonitor_edges.c
+TEST_APP_OBJS = $(TEST_APP_SRCS:.c=.o)
+
+TEST_SRCS = test/test_main.c test/test_edges.c test/test_contour.c test/test_mousewrap.c
+TEST_UNITY = test/unity/unity.c
+TEST_OBJS  = $(TEST_SRCS:.c=.o) test/unity/unity.o
+
+TEST_CFLAGS  = $(CFLAGS) -Isrc -Itest/unity
+TEST_LDFLAGS = -luser32
+TEST_BIN     = test_runner
 
 .PHONY: all clean test
 
 # Default target
 all: $(BIN)
 
-# Build the main binary
-$(BIN): $(SRCS:.c=.o)
-	$(CC) $(SRCS:.c=.o) -o $@ $(LDFLAGS)
+# Build main binary
+$(BIN): $(OBJS)
+	@mkdir -p bin
+	$(CC) $(OBJS) -o $@ $(LDFLAGS)
 
-# Compile source files
-%.o: %.c $(HEADERS)
+# Compile application source files
+src/%.o: src/%.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile resource files
-resource.o: resource.rc resource.h
-	$(RC) resource.rc -o resource.o
+# --- Test targets ---
+test/unity/unity.o: test/unity/unity.c test/unity/unity.h test/unity/unity_internals.h
+	$(CC) $(TEST_CFLAGS) -c $< -o $@
 
-# Clean the build
+test/%.o: test/%.c $(HEADERS)
+	$(CC) $(TEST_CFLAGS) -c $< -o $@
+
+test: $(TEST_APP_OBJS) $(TEST_OBJS)
+	$(CC) $(TEST_APP_OBJS) $(TEST_OBJS) -o $(TEST_BIN) $(TEST_LDFLAGS)
+	./$(TEST_BIN)
+
+# Clean
 clean:
-	rm -f $(SRCS:.c=.o) $(TEST_OBJS) $(BIN) $(TEST_BIN)
+	rm -f $(OBJS) $(TEST_OBJS) $(TEST_APP_OBJS) $(BIN) $(TEST_BIN)

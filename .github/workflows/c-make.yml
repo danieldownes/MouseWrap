@@ -21,12 +21,16 @@ jobs:
         
       - name: Restore NuGet packages
         run: nuget restore MouseWrap4.sln
-        working-directory: ./v4.0/src/
-        
+        working-directory: ./src/
+
       - name: Build solution
         run: msbuild MouseWrap4.sln /p:Configuration=Release /p:Platform="Any CPU"
-        working-directory: ./v4.0/src/
-        
+        working-directory: ./src/
+
       - name: Build Debug configuration
         run: msbuild MouseWrap4.sln /p:Configuration=Debug /p:Platform="Any CPU"
-        working-directory: ./v4.0/src/
+        working-directory: ./src/
+
+      - name: Run Unity tests
+        shell: bash
+        run: make CC=gcc test

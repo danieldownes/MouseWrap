@@ -186,8 +186,12 @@ void ToggleWrapEnabled(HWND hwnd)
     }
 }
 
+// How many pixels from a contour edge the cursor must be to trigger a wrap.
+// 1 px means the cursor must be directly on or adjacent to the boundary.
 #define PIXEL_TOLERANCE 1
-#define WRAP_OFFSET 5 // Increased offset for placing cursor after wrap
+// How many pixels inward from the opposite contour edge to place the cursor
+// after wrapping.  Must be > PIXEL_TOLERANCE to avoid immediately re-triggering.
+#define WRAP_OFFSET 5
 
 BOOL IsPointNearEdge(POINT pt, me_Edge edge, int tolerance) {
     if (edge.x1 == edge.x2) { 

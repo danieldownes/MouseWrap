@@ -1,5 +1,18 @@
 # Version History
 
+## Version 4.0:
+
+Released: 2026
+
+New Features:
+
+ - Multi-monitor contour algorithm: wraps the mouse pointer around the true outer boundary of any monitor arrangement, including non-rectangular layouts.
+ - Theme-aware tray icons: automatically switches between light and dark icons to match the Windows system theme.
+ - Per-monitor DPI awareness (V2): sharp rendering on mixed-DPI setups.
+ - Single-instance enforcement: prevents multiple copies from running simultaneously.
+ - "Wrap within workspace" toggle: optionally confine wrapping to the work area (excluding taskbars).
+ - Pure C rewrite: entire application rewritten in C from the original C++ codebase for smaller footprint and simpler build.
+
 ## Version 2.04:
 
 Released: 12/01/2005

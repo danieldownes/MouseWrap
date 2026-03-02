@@ -25,8 +25,17 @@ static SIZE_T unique_sorted_longs(long* arr, SIZE_T size) {
 }
 
 EdgeList* create_edge_list(SIZE_T initial_capacity) {
-    EdgeList* list = (EdgeList*)HeapAlloc(GetProcessHeap(), 0, sizeof(EdgeList));
-    list->edges = (me_Edge*)HeapAlloc(GetProcessHeap(), 0, initial_capacity * sizeof(me_Edge));
+    EdgeList* list = (EdgeList*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(EdgeList));
+    if (list == NULL) return NULL;
+    if (initial_capacity == 0) {
+        list->edges = NULL;
+    } else {
+        list->edges = (me_Edge*)HeapAlloc(GetProcessHeap(), 0, initial_capacity * sizeof(me_Edge));
+        if (list->edges == NULL) {
+            HeapFree(GetProcessHeap(), 0, list);
+            return NULL;
+        }
+    }
     list->size = 0;
     list->capacity = initial_capacity;
     return list;
@@ -34,8 +43,16 @@ EdgeList* create_edge_list(SIZE_T initial_capacity) {
 
 void edge_list_add(EdgeList* list, me_Edge edge) {
     if (list->size == list->capacity) {
-        list->capacity *= 2;
-        list->edges = (me_Edge*)HeapReAlloc(GetProcessHeap(), 0, list->edges, list->capacity * sizeof(me_Edge));
+        SIZE_T new_capacity = (list->capacity == 0) ? 4 : list->capacity * 2;
+        me_Edge* new_edges;
+        if (list->edges == NULL) {
+            new_edges = (me_Edge*)HeapAlloc(GetProcessHeap(), 0, new_capacity * sizeof(me_Edge));
+        } else {
+            new_edges = (me_Edge*)HeapReAlloc(GetProcessHeap(), 0, list->edges, new_capacity * sizeof(me_Edge));
+        }
+        if (new_edges == NULL) return; // Allocation failed, edge not added
+        list->edges = new_edges;
+        list->capacity = new_capacity;
     }
     list->edges[list->size++] = edge;
 }

@@ -7,6 +7,9 @@
 # Prerequisites
 *.d
 
+# Visual Studio Auto-generated Property Sheet
+*.APS
+
 # Object files
 *.o
 *.ko
