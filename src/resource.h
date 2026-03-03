@@ -6,6 +6,9 @@
 #define IDI_ICON_DISABLED_DARK          104
 #define IDI_ICON_ENABLED_LIGHT          105
 #define IDI_ICON_DISABLED_LIGHT         107
+#define IDD_OPTIONS                     200
+#define IDC_MONITOR_PREVIEW             2001
+#define IDM_OPTIONS                     1005
 
 // Next default values for new objects
 // 

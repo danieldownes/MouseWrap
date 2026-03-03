@@ -1,5 +1,6 @@
 #include "main.h"
 #include "mouse_wrap.h" // For UpdateMonitorContours and CleanupGlobalContourResources
+#include "options_dialog.h"
 #include <windows.h>
 #include <ShellScalingApi.h> // For SetProcessDpiAwarenessContext
 
@@ -24,6 +25,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	OutputDebugStringA("MouseWrap: Mutex created.\n");
 
     hInst = hInstance;
+
+    InitDarkMode();
 
     WNDCLASSW wc = { 0 };
     wc.lpfnWndProc = WindowProc;
@@ -55,6 +58,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	OutputDebugStringA("MouseWrap: Tray icon created.\n");
 
     CreateContextMenu();
+    LoadDisabledEdges();
     wrapEnabled = FALSE;
     ToggleWrapEnabled(hwnd);
 

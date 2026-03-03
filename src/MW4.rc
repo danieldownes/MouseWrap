@@ -62,6 +62,22 @@ IDI_ICON_DISABLED_LIGHT ICON                    "mw4-disabled-light.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Dialog
+//
+
+IDD_OPTIONS DIALOGEX 0, 0, 320, 240
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "MouseWrap Options"
+FONT 9, "Segoe UI"
+BEGIN
+    GROUPBOX        "Monitor Layout", -1, 10, 10, 300, 170
+    CONTROL         "", IDC_MONITOR_PREVIEW, "Static", SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE, 20, 24, 280, 148
+    PUSHBUTTON      "Close", IDCANCEL, 260, 192, 50, 16
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Version
 //
 

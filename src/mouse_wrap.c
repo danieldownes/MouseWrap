@@ -17,6 +17,9 @@ SIZE_T g_monitor_count_desktop = 0;
 me_Rect* g_monitor_rects_workspace = NULL;
 SIZE_T g_monitor_count_workspace = 0;
 
+// Edges the user has disabled (no wrapping at these boundaries)
+EdgeList* g_disabled_edges = NULL;
+
 BOOL wrapEnabled = TRUE;
 
 typedef struct {
@@ -121,6 +124,23 @@ void UpdateMonitorContours() { // Renamed from UpdateDesktopContour
         OutputDebugStringA("Desktop Contour: No monitors or 0 edges.\n");
     }
 
+    // Prune disabled edges that no longer exist in the new desktop contour
+    if (g_disabled_edges != NULL && g_desktop_contour != NULL) {
+        for (SIZE_T i = g_disabled_edges->size; i > 0; i--) {
+            me_Edge de = g_disabled_edges->edges[i - 1];
+            BOOL still_exists = FALSE;
+            for (SIZE_T j = 0; j < g_desktop_contour->size; j++) {
+                if (me_edge_equals(&de, &g_desktop_contour->edges[j])) {
+                    still_exists = TRUE;
+                    break;
+                }
+            }
+            if (!still_exists)
+                edge_list_remove(g_disabled_edges, de);
+        }
+        SaveDisabledEdges();
+    }
+
     // --- Workspace Contour ---
     g_monitor_rects_workspace = (me_Rect*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, raw_monitor_count * sizeof(me_Rect));
     if (g_monitor_rects_workspace == NULL) return;
@@ -167,6 +187,10 @@ void CleanupGlobalContourResources() {
         edge_list_free(g_workspace_contour);
         g_workspace_contour = NULL;
     }
+    if (g_disabled_edges != NULL) {
+        edge_list_free(g_disabled_edges);
+        g_disabled_edges = NULL;
+    }
     FreeGlobalMonitorRectArrays();
 }
 
@@ -193,16 +217,105 @@ void ToggleWrapEnabled(HWND hwnd)
 #define WRAP_OFFSET 5
 
 BOOL IsPointNearEdge(POINT pt, me_Edge edge, int tolerance) {
-    if (edge.x1 == edge.x2) { 
-        if (abs(pt.x - edge.x1) <= tolerance) { 
+    if (edge.x1 == edge.x2) {
+        if (abs(pt.x - edge.x1) <= tolerance) {
             return (pt.y >= edge.y1 && pt.y <= edge.y2);
         }
-    } else if (edge.y1 == edge.y2) { 
-        if (abs(pt.y - edge.y1) <= tolerance) { 
+    } else if (edge.y1 == edge.y2) {
+        if (abs(pt.y - edge.y1) <= tolerance) {
             return (pt.x >= edge.x1 && pt.x <= edge.x2);
         }
     }
     return FALSE;
+}
+
+// Check whether two axis-aligned edges lie on the same line and overlap.
+// Used so that a disabled desktop edge also blocks the corresponding
+// workspace-contour edge (which may be a sub-segment shifted by the taskbar).
+static BOOL EdgesOverlap(const me_Edge* a, const me_Edge* b) {
+    if (a->x1 == a->x2 && b->x1 == b->x2 && a->x1 == b->x1) {
+        // Both vertical at the same x — check y-range overlap
+        return (a->y1 < b->y2 && b->y1 < a->y2);
+    }
+    if (a->y1 == a->y2 && b->y1 == b->y2 && a->y1 == b->y1) {
+        // Both horizontal at the same y — check x-range overlap
+        return (a->x1 < b->x2 && b->x1 < a->x2);
+    }
+    return FALSE;
+}
+
+BOOL IsEdgeDisabled(me_Edge edge) {
+    if (g_disabled_edges == NULL) return FALSE;
+    for (SIZE_T i = 0; i < g_disabled_edges->size; i++) {
+        if (EdgesOverlap(&g_disabled_edges->edges[i], &edge))
+            return TRUE;
+    }
+    return FALSE;
+}
+
+void ToggleEdgeDisabled(me_Edge edge) {
+    if (g_disabled_edges == NULL)
+        g_disabled_edges = create_edge_list(4);
+    // If already disabled, remove it (re-enable)
+    for (SIZE_T i = 0; i < g_disabled_edges->size; i++) {
+        if (me_edge_equals(&g_disabled_edges->edges[i], &edge)) {
+            edge_list_remove(g_disabled_edges, edge);
+            SaveDisabledEdges();
+            return;
+        }
+    }
+    // Not found — disable it
+    edge_list_add(g_disabled_edges, edge);
+    SaveDisabledEdges();
+}
+
+#define MW_REG_KEY  L"Software\\MouseWrap"
+#define MW_REG_VAL  L"DisabledEdges"
+
+void SaveDisabledEdges(void) {
+    HKEY hKey;
+    if (g_disabled_edges == NULL || g_disabled_edges->size == 0) {
+        // Delete the value if no edges are disabled
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, KEY_SET_VALUE, &hKey) == ERROR_SUCCESS) {
+            RegDeleteValueW(hKey, MW_REG_VAL);
+            RegCloseKey(hKey);
+        }
+        return;
+    }
+    if (RegCreateKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, NULL, 0,
+                        KEY_SET_VALUE, NULL, &hKey, NULL) != ERROR_SUCCESS)
+        return;
+    DWORD cbData = (DWORD)(g_disabled_edges->size * sizeof(me_Edge));
+    RegSetValueExW(hKey, MW_REG_VAL, 0, REG_BINARY,
+                   (const BYTE*)g_disabled_edges->edges, cbData);
+    RegCloseKey(hKey);
+}
+
+void LoadDisabledEdges(void) {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, KEY_QUERY_VALUE, &hKey) != ERROR_SUCCESS)
+        return;
+    DWORD cbData = 0;
+    DWORD dwType = 0;
+    if (RegQueryValueExW(hKey, MW_REG_VAL, NULL, &dwType, NULL, &cbData) != ERROR_SUCCESS
+        || dwType != REG_BINARY || cbData == 0 || (cbData % sizeof(me_Edge)) != 0) {
+        RegCloseKey(hKey);
+        return;
+    }
+    SIZE_T count = cbData / sizeof(me_Edge);
+    if (g_disabled_edges != NULL)
+        edge_list_free(g_disabled_edges);
+    g_disabled_edges = create_edge_list(count);
+    if (g_disabled_edges == NULL) { RegCloseKey(hKey); return; }
+
+    me_Edge* buf = (me_Edge*)HeapAlloc(GetProcessHeap(), 0, cbData);
+    if (buf == NULL) { RegCloseKey(hKey); return; }
+    if (RegQueryValueExW(hKey, MW_REG_VAL, NULL, NULL, (BYTE*)buf, &cbData) == ERROR_SUCCESS) {
+        for (SIZE_T i = 0; i < count; i++)
+            edge_list_add(g_disabled_edges, buf[i]);
+    }
+    HeapFree(GetProcessHeap(), 0, buf);
+    RegCloseKey(hKey);
 }
 
 // Check a contour for an edge hit and wrap the cursor if found.
@@ -232,6 +345,9 @@ static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const ch
     for (SIZE_T i = 0; i < contour->size; i++) {
         me_Edge hit_edge = contour->edges[i];
         if (!IsPointNearEdge(current_pos, hit_edge, PIXEL_TOLERANCE))
+            continue;
+
+        if (IsEdgeDisabled(hit_edge))
             continue;
 
         POINT new_pos = current_pos;

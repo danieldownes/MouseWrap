@@ -3,13 +3,16 @@
 CC ?= gcc
 
 # --- Main application ---
-CFLAGS  = -std=c17 -Wall -Wextra -pedantic -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00
-LDFLAGS = -mwindows -municode -luser32 -lshell32 -ladvapi32 -lshcore
+VERSION = 4.0
+CFLAGS  = -std=c17 -Wall -Wextra -pedantic -Os -DUNICODE -D_UNICODE \
+          -D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00 -DPRODVER_STR='"$(VERSION)"'
+LDFLAGS = -mwindows -municode -s -luser32 -lshell32 -ladvapi32 -lshcore -lgdi32 -lcomctl32 -ldwmapi -luxtheme
 
 SRCS = src/main.c src/mouse_wrap.c src/multimonitor_contour.c \
-       src/multimonitor_edges.c src/taskbar.c src/startup.c
+       src/multimonitor_edges.c src/taskbar.c src/startup.c src/options_dialog.c
 HEADERS = src/main.h src/mouse_wrap.h src/multimonitor_contour.h \
-          src/multimonitor_edges.h src/taskbar.h src/startup.h src/resource.h
+          src/multimonitor_edges.h src/taskbar.h src/startup.h src/resource.h \
+          src/options_dialog.h
 OBJS = $(SRCS:.c=.o)
 RES_OBJ = src/MW4_res.o
 

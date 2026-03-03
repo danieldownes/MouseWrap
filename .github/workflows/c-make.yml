@@ -1,4 +1,4 @@
-name: Visual Studio C++ CI
+name: C Build & Test
 
 on:
   push:
@@ -12,24 +12,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-        
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v2
-        
-      - name: Restore NuGet packages
-        run: nuget restore MouseWrap4.sln
-        working-directory: ./src/
 
-      - name: Build solution
-        run: msbuild MouseWrap4.sln /p:Configuration=Release /p:Platform="Any CPU"
-        working-directory: ./src/
-
-      - name: Build Debug configuration
-        run: msbuild MouseWrap4.sln /p:Configuration=Debug /p:Platform="Any CPU"
-        working-directory: ./src/
+      - name: Build application
+        shell: bash
+        run: make CC=gcc all
 
       - name: Run Unity tests
         shell: bash

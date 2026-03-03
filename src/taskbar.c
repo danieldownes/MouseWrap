@@ -1,4 +1,5 @@
 #include "taskbar.h"
+#include "options_dialog.h"
 #include <string.h> // For standard memset
 
 #define WM_TRAYICON (WM_USER + 1)
@@ -111,6 +112,8 @@ void ShowContextMenu(HWND hwnd)
 void CreateContextMenu(void)
 {
     hMenu = CreatePopupMenu();
+    AppendMenuW(hMenu, MF_STRING, IDM_OPTIONS, L"Options...");
+    AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL);
     AppendMenuW(hMenu, MF_STRING, IDM_VERSIONCHECK, L"Check for updates");
     AppendMenuW(hMenu, MF_STRING, IDM_BUYMEACOFFEE, L"Buy Me a Coffee");
     AppendMenuW(hMenu, MF_STRING, IDM_TOGGLE_STARTUP, L"Start with Windows");
@@ -143,6 +146,9 @@ void TaskBarCheckCommand(WORD cmd)
             RemoveFromStartup();
         else
             AddToStartup();
+        break;
+    case IDM_OPTIONS:
+        ShowOptionsDialog(nid.hWnd);
         break;
     }
 }
