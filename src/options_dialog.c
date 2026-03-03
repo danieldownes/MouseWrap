@@ -4,6 +4,7 @@
 #include "multimonitor_edges.h"
 #include "multimonitor_contour.h"
 #include <windowsx.h>
+#include <commctrl.h>
 #include <uxtheme.h>
 
 // Forward-declare IsDarkTheme from taskbar.c
@@ -45,13 +46,18 @@ void InitDarkMode(void)
 #define CLR_LIGHT_MON_FILL   RGB(76, 128, 200)
 #define CLR_LIGHT_MON_BORDER RGB(0, 90, 158)
 
-// Edge colors
+// Edge colors — three states
 #define CLR_EDGE_ENABLED_LIGHT  RGB(0, 180, 0)
 #define CLR_EDGE_ENABLED_DARK   RGB(0, 200, 80)
+#define CLR_EDGE_DELAYED_LIGHT  RGB(220, 180, 0)
+#define CLR_EDGE_DELAYED_DARK   RGB(240, 200, 40)
 #define CLR_EDGE_DISABLED_LIGHT RGB(200, 0, 0)
 #define CLR_EDGE_DISABLED_DARK  RGB(220, 50, 50)
 
 // --- Dialog state ---
+
+#define IDT_CURSOR_TRACK  50   // timer ID for live cursor dot
+#define CURSOR_TRACK_MS   50   // refresh interval (ms)
 
 #define MAX_PREVIEW_MONITORS 16
 #define MAX_CONTOUR_EDGES    128
@@ -59,9 +65,9 @@ void InitDarkMode(void)
 typedef struct {
     me_Rect  rects[MAX_PREVIEW_MONITORS];
     SIZE_T   count;
-    me_Edge  contourEdges[MAX_CONTOUR_EDGES];
-    BOOL     edgeDisabled[MAX_CONTOUR_EDGES];
-    SIZE_T   contourCount;
+    me_Edge    contourEdges[MAX_CONTOUR_EDGES];
+    EdgeState  edgeState[MAX_CONTOUR_EDGES];
+    SIZE_T     contourCount;
     BOOL     dark;
     HBRUSH   hBrushBg;
     // Cached transform for hit testing (set during draw)
@@ -165,11 +171,14 @@ static void DrawMonitorPreview(OptionsDlgData* data, const DRAWITEMSTRUCT* dis)
 
     // Draw contour edges as colored lines over the monitors
     COLORREF enabledColor  = data->dark ? CLR_EDGE_ENABLED_DARK  : CLR_EDGE_ENABLED_LIGHT;
+    COLORREF delayedColor  = data->dark ? CLR_EDGE_DELAYED_DARK  : CLR_EDGE_DELAYED_LIGHT;
     COLORREF disabledColor = data->dark ? CLR_EDGE_DISABLED_DARK : CLR_EDGE_DISABLED_LIGHT;
 
     for (SIZE_T i = 0; i < data->contourCount; i++) {
         me_Edge e = data->contourEdges[i];
-        COLORREF clr = data->edgeDisabled[i] ? disabledColor : enabledColor;
+        COLORREF clr = enabledColor;
+        if (data->edgeState[i] == EDGE_DELAYED) clr = delayedColor;
+        else if (data->edgeState[i] == EDGE_NOWRAP) clr = disabledColor;
         HPEN hEdgePen = CreatePen(PS_SOLID, 3, clr);
         HPEN hPrevPen = SelectObject(hdc, hEdgePen);
 
@@ -184,6 +193,72 @@ static void DrawMonitorPreview(OptionsDlgData* data, const DRAWITEMSTRUCT* dis)
         SelectObject(hdc, hPrevPen);
         DeleteObject(hEdgePen);
     }
+
+    // Draw live cursor position as a dot
+    {
+        POINT cursorPos;
+        GetCursorPos(&cursorPos);
+        int cx = offX + (int)((cursorPos.x - bbLeft) * scale);
+        int cy = offY + (int)((cursorPos.y - bbTop)  * scale);
+        int r = 4;
+        COLORREF dotColor = data->dark ? RGB(255, 255, 255) : RGB(255, 60, 60);
+        HBRUSH hDotBrush = CreateSolidBrush(dotColor);
+        HPEN hDotPen = CreatePen(PS_SOLID, 1, dotColor);
+        HBRUSH hPrevBrush = SelectObject(hdc, hDotBrush);
+        HPEN hPrevPen2 = SelectObject(hdc, hDotPen);
+        Ellipse(hdc, cx - r, cy - r, cx + r, cy + r);
+        SelectObject(hdc, hPrevPen2);
+        SelectObject(hdc, hPrevBrush);
+        DeleteObject(hDotPen);
+        DeleteObject(hDotBrush);
+    }
+}
+
+static void DrawEdgeLegend(OptionsDlgData* data, const DRAWITEMSTRUCT* dis)
+{
+    HDC hdc = dis->hDC;
+    RECT rc = dis->rcItem;
+
+    // Fill background
+    HBRUSH hBg = CreateSolidBrush(data->dark ? CLR_DARK_BG : GetSysColor(COLOR_BTNFACE));
+    FillRect(hdc, &rc, hBg);
+    DeleteObject(hBg);
+
+    HFONT hFont = CreateFontW(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                              DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                              CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI");
+    HFONT hOldFont = SelectObject(hdc, hFont);
+    SetBkMode(hdc, TRANSPARENT);
+    SetTextColor(hdc, data->dark ? RGB(200, 200, 200) : RGB(60, 60, 60));
+
+    struct { COLORREF clr; const WCHAR* label; } items[] = {
+        { data->dark ? CLR_EDGE_ENABLED_DARK  : CLR_EDGE_ENABLED_LIGHT,  L"Wrap" },
+        { data->dark ? CLR_EDGE_DELAYED_DARK  : CLR_EDGE_DELAYED_LIGHT,  L"Delayed" },
+        { data->dark ? CLR_EDGE_DISABLED_DARK : CLR_EDGE_DISABLED_LIGHT, L"No Wrap" },
+    };
+
+    int x = rc.left + 4;
+    int cy = (rc.top + rc.bottom) / 2;
+    int lineLen = 20;
+    int gap = 6;
+
+    for (int i = 0; i < 3; i++) {
+        HPEN hPen = CreatePen(PS_SOLID, 3, items[i].clr);
+        HPEN hOldPen = SelectObject(hdc, hPen);
+        MoveToEx(hdc, x, cy, NULL);
+        LineTo(hdc, x + lineLen, cy);
+        SelectObject(hdc, hOldPen);
+        DeleteObject(hPen);
+        x += lineLen + gap;
+
+        SIZE sz;
+        GetTextExtentPoint32W(hdc, items[i].label, (int)wcslen(items[i].label), &sz);
+        TextOutW(hdc, x, cy - sz.cy / 2, items[i].label, (int)wcslen(items[i].label));
+        x += sz.cx + gap * 2;
+    }
+
+    SelectObject(hdc, hOldFont);
+    DeleteObject(hFont);
 }
 
 static void HandlePreviewClick(HWND hDlg, OptionsDlgData* data)
@@ -228,8 +303,10 @@ static void HandlePreviewClick(HWND hDlg, OptionsDlgData* data)
     }
 
     if (bestIdx >= 0) {
-        data->edgeDisabled[bestIdx] = !data->edgeDisabled[bestIdx];
-        ToggleEdgeDisabled(data->contourEdges[bestIdx]);
+        EdgeState s = data->edgeState[bestIdx];
+        EdgeState next = (s == EDGE_WRAP) ? EDGE_DELAYED : (s == EDGE_DELAYED) ? EDGE_NOWRAP : EDGE_WRAP;
+        data->edgeState[bestIdx] = next;
+        CycleEdgeState(data->contourEdges[bestIdx]);
         InvalidateRect(GetDlgItem(hDlg, IDC_MONITOR_PREVIEW), NULL, TRUE);
     }
 }
@@ -262,7 +339,7 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             if (n > MAX_CONTOUR_EDGES) n = MAX_CONTOUR_EDGES;
             for (SIZE_T i = 0; i < n; i++) {
                 data->contourEdges[i] = g_desktop_contour->edges[i];
-                data->edgeDisabled[i] = IsEdgeDisabled(g_desktop_contour->edges[i]);
+                data->edgeState[i] = GetEdgeState(g_desktop_contour->edges[i]);
             }
             data->contourCount = n;
         }
@@ -296,13 +373,43 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             data->hBrushBg = NULL;
         }
 
+        // Initialize delay slider (200–1000 ms, tick every 100)
+        {
+            HWND hSlider = GetDlgItem(hDlg, IDC_DELAY_SLIDER);
+            SendMessageW(hSlider, TBM_SETRANGE, TRUE, MAKELPARAM(200, 1000));
+            SendMessageW(hSlider, TBM_SETTICFREQ, 100, 0);
+            SendMessageW(hSlider, TBM_SETLINESIZE, 0, 100);
+            SendMessageW(hSlider, TBM_SETPAGESIZE, 0, 100);
+            SendMessageW(hSlider, TBM_SETPOS, TRUE, (LPARAM)g_edge_delay_ms);
+
+            WCHAR buf[32];
+            wsprintfW(buf, L"Delay: %lu ms", g_edge_delay_ms);
+            SetDlgItemTextW(hDlg, IDC_DELAY_LABEL, buf);
+        }
+
+        SetTimer(hDlg, IDT_CURSOR_TRACK, CURSOR_TRACK_MS, NULL);
+
         return TRUE;
+
+    case WM_TIMER:
+        if (wParam == IDT_CURSOR_TRACK) {
+            InvalidateRect(GetDlgItem(hDlg, IDC_MONITOR_PREVIEW), NULL, FALSE);
+            return TRUE;
+        }
+        break;
 
     case WM_DRAWITEM:
         data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-        if (data && ((DRAWITEMSTRUCT*)lParam)->CtlID == IDC_MONITOR_PREVIEW) {
-            DrawMonitorPreview(data, (DRAWITEMSTRUCT*)lParam);
-            return TRUE;
+        if (data) {
+            DRAWITEMSTRUCT* dis = (DRAWITEMSTRUCT*)lParam;
+            if (dis->CtlID == IDC_MONITOR_PREVIEW) {
+                DrawMonitorPreview(data, dis);
+                return TRUE;
+            }
+            if (dis->CtlID == IDC_EDGE_LEGEND) {
+                DrawEdgeLegend(data, dis);
+                return TRUE;
+            }
         }
         break;
 
@@ -323,9 +430,27 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
         }
         break;
 
+    case WM_HSCROLL:
+        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+        if (data && (HWND)lParam == GetDlgItem(hDlg, IDC_DELAY_SLIDER)) {
+            DWORD raw = (DWORD)SendMessageW((HWND)lParam, TBM_GETPOS, 0, 0);
+            DWORD pos = ((raw + 50) / 100) * 100; // snap to 100s
+            if (pos < 200) pos = 200;
+            if (pos > 1000) pos = 1000;
+            SendMessageW((HWND)lParam, TBM_SETPOS, TRUE, (LPARAM)pos);
+            g_edge_delay_ms = pos;
+            SaveDelayMs();
+            WCHAR buf[32];
+            wsprintfW(buf, L"Delay: %lu ms", pos);
+            SetDlgItemTextW(hDlg, IDC_DELAY_LABEL, buf);
+            return TRUE;
+        }
+        break;
+
     case WM_COMMAND:
         data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
         if (LOWORD(wParam) == IDCANCEL) {
+            KillTimer(hDlg, IDT_CURSOR_TRACK);
             if (data && data->hBrushBg)
                 DeleteObject(data->hBrushBg);
             EndDialog(hDlg, 0);
@@ -338,6 +463,7 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
         break;
 
     case WM_CLOSE:
+        KillTimer(hDlg, IDT_CURSOR_TRACK);
         data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
         if (data && data->hBrushBg)
             DeleteObject(data->hBrushBg);

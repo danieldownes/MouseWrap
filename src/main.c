@@ -58,7 +58,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	OutputDebugStringA("MouseWrap: Tray icon created.\n");
 
     CreateContextMenu();
-    LoadDisabledEdges();
+    LoadEdgeStates();
+    LoadDelayMs();
     wrapEnabled = FALSE;
     ToggleWrapEnabled(hwnd);
 

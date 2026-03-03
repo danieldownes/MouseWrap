@@ -3,7 +3,7 @@
 CC ?= gcc
 
 # --- Main application ---
-VERSION = 4.0
+VERSION = 4.1
 CFLAGS  = -std=c17 -Wall -Wextra -pedantic -Os -DUNICODE -D_UNICODE \
           -D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00 -DPRODVER_STR='"$(VERSION)"'
 LDFLAGS = -mwindows -municode -s -luser32 -lshell32 -ladvapi32 -lshcore -lgdi32 -lcomctl32 -ldwmapi -luxtheme

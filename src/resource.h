@@ -8,6 +8,9 @@
 #define IDI_ICON_DISABLED_LIGHT         107
 #define IDD_OPTIONS                     200
 #define IDC_MONITOR_PREVIEW             2001
+#define IDC_EDGE_LEGEND                 2002
+#define IDC_DELAY_SLIDER                2003
+#define IDC_DELAY_LABEL                 2004
 #define IDM_OPTIONS                     1005
 
 // Next default values for new objects

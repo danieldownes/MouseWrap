@@ -19,6 +19,8 @@ SIZE_T g_monitor_count_workspace = 0;
 
 // Edges the user has disabled (no wrapping at these boundaries)
 EdgeList* g_disabled_edges = NULL;
+// Edges the user has set to delayed wrapping (100 ms pause then wrap)
+EdgeList* g_delayed_edges = NULL;
 
 BOOL wrapEnabled = TRUE;
 
@@ -124,21 +126,26 @@ void UpdateMonitorContours() { // Renamed from UpdateDesktopContour
         OutputDebugStringA("Desktop Contour: No monitors or 0 edges.\n");
     }
 
-    // Prune disabled edges that no longer exist in the new desktop contour
-    if (g_disabled_edges != NULL && g_desktop_contour != NULL) {
-        for (SIZE_T i = g_disabled_edges->size; i > 0; i--) {
-            me_Edge de = g_disabled_edges->edges[i - 1];
-            BOOL still_exists = FALSE;
-            for (SIZE_T j = 0; j < g_desktop_contour->size; j++) {
-                if (me_edge_equals(&de, &g_desktop_contour->edges[j])) {
-                    still_exists = TRUE;
-                    break;
+    // Prune disabled/delayed edges that no longer exist in the new desktop contour
+    if (g_desktop_contour != NULL) {
+        EdgeList* lists[] = { g_disabled_edges, g_delayed_edges };
+        for (int li = 0; li < 2; li++) {
+            EdgeList* el = lists[li];
+            if (el == NULL) continue;
+            for (SIZE_T i = el->size; i > 0; i--) {
+                me_Edge de = el->edges[i - 1];
+                BOOL still_exists = FALSE;
+                for (SIZE_T j = 0; j < g_desktop_contour->size; j++) {
+                    if (me_edge_equals(&de, &g_desktop_contour->edges[j])) {
+                        still_exists = TRUE;
+                        break;
+                    }
                 }
+                if (!still_exists)
+                    edge_list_remove(el, de);
             }
-            if (!still_exists)
-                edge_list_remove(g_disabled_edges, de);
         }
-        SaveDisabledEdges();
+        SaveEdgeStates();
     }
 
     // --- Workspace Contour ---
@@ -190,6 +197,10 @@ void CleanupGlobalContourResources() {
     if (g_disabled_edges != NULL) {
         edge_list_free(g_disabled_edges);
         g_disabled_edges = NULL;
+    }
+    if (g_delayed_edges != NULL) {
+        edge_list_free(g_delayed_edges);
+        g_delayed_edges = NULL;
     }
     FreeGlobalMonitorRectArrays();
 }
@@ -244,79 +255,140 @@ static BOOL EdgesOverlap(const me_Edge* a, const me_Edge* b) {
     return FALSE;
 }
 
-BOOL IsEdgeDisabled(me_Edge edge) {
-    if (g_disabled_edges == NULL) return FALSE;
-    for (SIZE_T i = 0; i < g_disabled_edges->size; i++) {
-        if (EdgesOverlap(&g_disabled_edges->edges[i], &edge))
-            return TRUE;
-    }
-    return FALSE;
-}
-
-void ToggleEdgeDisabled(me_Edge edge) {
-    if (g_disabled_edges == NULL)
-        g_disabled_edges = create_edge_list(4);
-    // If already disabled, remove it (re-enable)
-    for (SIZE_T i = 0; i < g_disabled_edges->size; i++) {
-        if (me_edge_equals(&g_disabled_edges->edges[i], &edge)) {
-            edge_list_remove(g_disabled_edges, edge);
-            SaveDisabledEdges();
-            return;
+EdgeState GetEdgeState(me_Edge edge) {
+    if (g_disabled_edges != NULL) {
+        for (SIZE_T i = 0; i < g_disabled_edges->size; i++) {
+            if (EdgesOverlap(&g_disabled_edges->edges[i], &edge))
+                return EDGE_NOWRAP;
         }
     }
-    // Not found — disable it
-    edge_list_add(g_disabled_edges, edge);
-    SaveDisabledEdges();
+    if (g_delayed_edges != NULL) {
+        for (SIZE_T i = 0; i < g_delayed_edges->size; i++) {
+            if (EdgesOverlap(&g_delayed_edges->edges[i], &edge))
+                return EDGE_DELAYED;
+        }
+    }
+    return EDGE_WRAP;
 }
 
-#define MW_REG_KEY  L"Software\\MouseWrap"
-#define MW_REG_VAL  L"DisabledEdges"
-
-void SaveDisabledEdges(void) {
-    HKEY hKey;
-    if (g_disabled_edges == NULL || g_disabled_edges->size == 0) {
-        // Delete the value if no edges are disabled
-        if (RegOpenKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, KEY_SET_VALUE, &hKey) == ERROR_SUCCESS) {
-            RegDeleteValueW(hKey, MW_REG_VAL);
-            RegCloseKey(hKey);
+void CycleEdgeState(me_Edge edge) {
+    // Check disabled list first (NOWRAP → WRAP: remove from disabled)
+    if (g_disabled_edges != NULL) {
+        for (SIZE_T i = 0; i < g_disabled_edges->size; i++) {
+            if (me_edge_equals(&g_disabled_edges->edges[i], &edge)) {
+                edge_list_remove(g_disabled_edges, edge);
+                SaveEdgeStates();
+                return;
+            }
         }
+    }
+    // Check delayed list (DELAYED → NOWRAP: remove from delayed, add to disabled)
+    if (g_delayed_edges != NULL) {
+        for (SIZE_T i = 0; i < g_delayed_edges->size; i++) {
+            if (me_edge_equals(&g_delayed_edges->edges[i], &edge)) {
+                edge_list_remove(g_delayed_edges, edge);
+                if (g_disabled_edges == NULL)
+                    g_disabled_edges = create_edge_list(4);
+                edge_list_add(g_disabled_edges, edge);
+                SaveEdgeStates();
+                return;
+            }
+        }
+    }
+    // Not in either list (WRAP → DELAYED: add to delayed)
+    if (g_delayed_edges == NULL)
+        g_delayed_edges = create_edge_list(4);
+    edge_list_add(g_delayed_edges, edge);
+    SaveEdgeStates();
+}
+
+#define MW_REG_KEY          L"Software\\MouseWrap"
+#define MW_REG_VAL_DISABLED L"DisabledEdges"
+#define MW_REG_VAL_DELAYED  L"DelayedEdges"
+
+static void SaveEdgeListToRegistry(HKEY hKey, const WCHAR* valueName, EdgeList* list) {
+    if (list == NULL || list->size == 0) {
+        RegDeleteValueW(hKey, valueName);
         return;
     }
+    DWORD cbData = (DWORD)(list->size * sizeof(me_Edge));
+    RegSetValueExW(hKey, valueName, 0, REG_BINARY,
+                   (const BYTE*)list->edges, cbData);
+}
+
+static void LoadEdgeListFromRegistry(HKEY hKey, const WCHAR* valueName, EdgeList** pList) {
+    DWORD cbData = 0;
+    DWORD dwType = 0;
+    if (RegQueryValueExW(hKey, valueName, NULL, &dwType, NULL, &cbData) != ERROR_SUCCESS
+        || dwType != REG_BINARY || cbData == 0 || (cbData % sizeof(me_Edge)) != 0)
+        return;
+    SIZE_T count = cbData / sizeof(me_Edge);
+    if (*pList != NULL)
+        edge_list_free(*pList);
+    *pList = create_edge_list(count);
+    if (*pList == NULL) return;
+
+    me_Edge* buf = (me_Edge*)HeapAlloc(GetProcessHeap(), 0, cbData);
+    if (buf == NULL) return;
+    if (RegQueryValueExW(hKey, valueName, NULL, NULL, (BYTE*)buf, &cbData) == ERROR_SUCCESS) {
+        for (SIZE_T i = 0; i < count; i++)
+            edge_list_add(*pList, buf[i]);
+    }
+    HeapFree(GetProcessHeap(), 0, buf);
+}
+
+void SaveEdgeStates(void) {
+    HKEY hKey;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, NULL, 0,
                         KEY_SET_VALUE, NULL, &hKey, NULL) != ERROR_SUCCESS)
         return;
-    DWORD cbData = (DWORD)(g_disabled_edges->size * sizeof(me_Edge));
-    RegSetValueExW(hKey, MW_REG_VAL, 0, REG_BINARY,
-                   (const BYTE*)g_disabled_edges->edges, cbData);
+    SaveEdgeListToRegistry(hKey, MW_REG_VAL_DISABLED, g_disabled_edges);
+    SaveEdgeListToRegistry(hKey, MW_REG_VAL_DELAYED,  g_delayed_edges);
     RegCloseKey(hKey);
 }
 
-void LoadDisabledEdges(void) {
+void LoadEdgeStates(void) {
     HKEY hKey;
     if (RegOpenKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, KEY_QUERY_VALUE, &hKey) != ERROR_SUCCESS)
         return;
-    DWORD cbData = 0;
-    DWORD dwType = 0;
-    if (RegQueryValueExW(hKey, MW_REG_VAL, NULL, &dwType, NULL, &cbData) != ERROR_SUCCESS
-        || dwType != REG_BINARY || cbData == 0 || (cbData % sizeof(me_Edge)) != 0) {
-        RegCloseKey(hKey);
-        return;
-    }
-    SIZE_T count = cbData / sizeof(me_Edge);
-    if (g_disabled_edges != NULL)
-        edge_list_free(g_disabled_edges);
-    g_disabled_edges = create_edge_list(count);
-    if (g_disabled_edges == NULL) { RegCloseKey(hKey); return; }
-
-    me_Edge* buf = (me_Edge*)HeapAlloc(GetProcessHeap(), 0, cbData);
-    if (buf == NULL) { RegCloseKey(hKey); return; }
-    if (RegQueryValueExW(hKey, MW_REG_VAL, NULL, NULL, (BYTE*)buf, &cbData) == ERROR_SUCCESS) {
-        for (SIZE_T i = 0; i < count; i++)
-            edge_list_add(g_disabled_edges, buf[i]);
-    }
-    HeapFree(GetProcessHeap(), 0, buf);
+    LoadEdgeListFromRegistry(hKey, MW_REG_VAL_DISABLED, &g_disabled_edges);
+    LoadEdgeListFromRegistry(hKey, MW_REG_VAL_DELAYED,  &g_delayed_edges);
     RegCloseKey(hKey);
 }
+
+// Configurable delay for EDGE_DELAYED edges
+DWORD g_edge_delay_ms = 300;
+
+#define MW_REG_VAL_DELAY_MS L"DelayMs"
+
+void SaveDelayMs(void) {
+    HKEY hKey;
+    if (RegCreateKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, NULL, 0,
+                        KEY_SET_VALUE, NULL, &hKey, NULL) != ERROR_SUCCESS)
+        return;
+    RegSetValueExW(hKey, MW_REG_VAL_DELAY_MS, 0, REG_DWORD,
+                   (const BYTE*)&g_edge_delay_ms, sizeof(g_edge_delay_ms));
+    RegCloseKey(hKey);
+}
+
+void LoadDelayMs(void) {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, KEY_QUERY_VALUE, &hKey) != ERROR_SUCCESS)
+        return;
+    DWORD cbData = sizeof(g_edge_delay_ms);
+    DWORD dwType = 0;
+    DWORD val = 0;
+    if (RegQueryValueExW(hKey, MW_REG_VAL_DELAY_MS, NULL, &dwType, (BYTE*)&val, &cbData) == ERROR_SUCCESS
+        && dwType == REG_DWORD && val >= 200 && val <= 1000) {
+        g_edge_delay_ms = val;
+    }
+    RegCloseKey(hKey);
+}
+
+// Delay timer state for EDGE_DELAYED edges
+static me_Edge g_delay_edge;
+static BOOL    g_delay_active = FALSE;
+static DWORD   g_delay_start  = 0;
 
 // Check a contour for an edge hit and wrap the cursor if found.
 // Returns TRUE if a wrap was performed.
@@ -347,8 +419,25 @@ static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const ch
         if (!IsPointNearEdge(current_pos, hit_edge, PIXEL_TOLERANCE))
             continue;
 
-        if (IsEdgeDisabled(hit_edge))
+        EdgeState state = GetEdgeState(hit_edge);
+        if (state == EDGE_NOWRAP)
             continue;
+
+        if (state == EDGE_DELAYED) {
+            if (g_delay_active && EdgesOverlap(&hit_edge, &g_delay_edge)) {
+                if (GetTickCount() - g_delay_start >= g_edge_delay_ms) {
+                    g_delay_active = FALSE;
+                    // fall through to wrap
+                } else {
+                    continue; // still waiting
+                }
+            } else {
+                g_delay_active = TRUE;
+                g_delay_edge = hit_edge;
+                g_delay_start = GetTickCount();
+                continue; // start waiting
+            }
+        }
 
         POINT new_pos = current_pos;
 
@@ -398,7 +487,14 @@ void WrapMouseWhileDragging()
     workspace_tick++;
     if (workspace_tick >= WORKSPACE_CHECK_INTERVAL) {
         workspace_tick = 0;
-        TryWrapAgainstContour(current_pos, g_workspace_contour, "Workspace");
+        if (TryWrapAgainstContour(current_pos, g_workspace_contour, "Workspace"))
+            return;
+    }
+
+    // Reset delay timer if cursor moved away from the tracked edge
+    if (g_delay_active) {
+        if (!IsPointNearEdge(current_pos, g_delay_edge, PIXEL_TOLERANCE))
+            g_delay_active = FALSE;
     }
 }
 

@@ -65,14 +65,17 @@ IDI_ICON_DISABLED_LIGHT ICON                    "mw4-disabled-light.ico"
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 320, 240
+IDD_OPTIONS DIALOGEX 0, 0, 320, 280
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "MouseWrap Options"
 FONT 9, "Segoe UI"
 BEGIN
     GROUPBOX        "Monitor Layout", -1, 10, 10, 300, 170
     CONTROL         "", IDC_MONITOR_PREVIEW, "Static", SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE, 20, 24, 280, 148
-    PUSHBUTTON      "Close", IDCANCEL, 260, 192, 50, 16
+    CONTROL         "", IDC_EDGE_LEGEND, "Static", SS_OWNERDRAW | WS_CHILD | WS_VISIBLE, 10, 185, 240, 14
+    LTEXT           "Delay: 300 ms", IDC_DELAY_LABEL, 10, 206, 60, 10
+    CONTROL         "", IDC_DELAY_SLIDER, "msctls_trackbar32", TBS_AUTOTICKS | WS_CHILD | WS_VISIBLE, 72, 203, 238, 16
+    PUSHBUTTON      "Close", IDCANCEL, 260, 232, 50, 16
 END
 
 
@@ -82,8 +85,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 4,1,0,0
+ PRODUCTVERSION 4,1,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -100,12 +103,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Daniel Downes - Immerse Labs Ltd"
             VALUE "FileDescription", "Mouse Utility to enable borderless screen movment"
-            VALUE "FileVersion", "4.0"
+            VALUE "FileVersion", "4.1"
             VALUE "InternalName", "MW4.exe"
             VALUE "LegalCopyright", "GNU GPL v2"
             VALUE "OriginalFilename", "MW4.exe"
             VALUE "ProductName", "MouseWrap"
-            VALUE "ProductVersion", "4.0"
+            VALUE "ProductVersion", "4.1"
         END
     END
     BLOCK "VarFileInfo"

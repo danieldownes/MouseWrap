@@ -1,5 +1,18 @@
 # Version History
 
+## Version 4.1:
+
+Released: 2026
+
+New Features:
+
+ - Three-state edge wrapping: each contour edge can now be set to Wrap (green), Delayed (yellow), or No Wrap (red) by clicking in the Options dialog.
+ - Delayed edge wrapping: cursor pauses at the boundary before wrapping, providing resistance at selected edges.
+ - Adjustable delay slider: configure the delayed-wrap timing from 200 ms to 1000 ms (snaps to 100 ms increments).
+ - Live cursor dot: the Options monitor preview now shows the real-time cursor position as a dot.
+ - Color key legend: the Options dialog displays a color legend explaining the three edge states.
+ - All edge states and delay settings are persisted in the registry and survive restarts.
+
 ## Version 4.0:
 
 Released: 2026
