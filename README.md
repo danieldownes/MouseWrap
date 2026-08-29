@@ -1,18 +1,8 @@
 Mouse Wrap: Seamless Desktop Navigation
 
-**Transform your Windows desktop experience with infinite mouse movement**
+**Wrap your mouse pointer around the edges of the screen**
 
-Mouse Wrap is a lightweight utility that revolutionizes how you navigate your Windows desktop by eliminating screen boundaries. Instead of your mouse cursor getting trapped at screen edges, Mouse Wrap creates a seamless, wraparound experience where moving off one edge instantly transports your cursor to the opposite side, and even supports any multi-monitor setup.
-
-## How It Works
-
-When your mouse pointer reaches any screen edge, it seamlessly wraps to the corresponding position on the opposite side:
-- Move off the right edge → appear on the left
-- Move off the left edge → appear on the right  
-- Move off the top edge → appear at the bottom
-- Move off the bottom edge → appear at the top
-
-This creates an infinite desktop experience where distance becomes irrelevant.
+Mouse Wrap is a lightweight utility that eliminats screen boundaries. Instead of your mouse cursor getting trapped at screen edges, Mouse Wrap creates a seamless, wraparound experience where moving off one edge instantly transports your cursor to the opposite side, and even supports any multi-monitor setup.
 
 ## Key Benefits
 
@@ -21,8 +11,6 @@ This creates an infinite desktop experience where distance becomes irrelevant.
 **Ergonomic Advantage**: Reduce wrist strain and repetitive movements, especially beneficial for extended computer use
 
 **Professional Productivity**: Perfect for designers, developers, and power users working with multiple applications and large displays
-
-**Gaming Enhancement**: Ideal for strategy games and applications requiring frequent screen-edge interactions
 
 ## Perfect For
 
@@ -45,19 +33,19 @@ Mouse Wrap has been trusted by users worldwide for **25 years**, continuously re
 
 **Love what Mouse Wrap does for your productivity?** Support continued development with a coffee! Your contribution helps maintain this beloved utility that thousands rely on daily.
 
-☕ [Buy Me a Coffee](https://buymeacoffee.com/danieldownes/mouse-wrap-4)  
+☕ [Buy Me a Coffee](https://ko-fi.com/c/29d0de73a1)  
 ❤️ [Sponsor me on GitHub](https://github.com/sponsors/danieldownes) (one-time or monthly)
 *I make this for fun, with love and for my own usage. However I get a kick out of every contribution, no matter the size. Your contribution is deeply appreciated and directly supports ongoing development and maintenance.*
 
 # Latest Download
 
-[Mouse Wrap 4.1 release](https://github.com/danieldownes/MouseWrap/releases/tag/v4.1)
+[Mouse Wrap 4.2 release](https://github.com/danieldownes/MouseWrap/releases/tag/v4.2)
 
  - Multi-monitor aware mouse-wrapping
  - Theme aware traybar icon
  - No install 
  - Portable (depending on vc_redist)
- - 56.5 KB download
+ - Tiny download
 
 
 ## Goals:

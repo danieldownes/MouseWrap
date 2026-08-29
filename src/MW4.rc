@@ -87,8 +87,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,1,0,0
- PRODUCTVERSION 4,1,0,0
+ FILEVERSION 4,2,0,0
+ PRODUCTVERSION 4,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -105,12 +105,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Daniel Downes - Immerse Labs Ltd"
             VALUE "FileDescription", "Mouse Utility to enable borderless screen movment"
-            VALUE "FileVersion", "4.1"
+            VALUE "FileVersion", "4.2"
             VALUE "InternalName", "MW4.exe"
             VALUE "LegalCopyright", "GNU GPL v2"
             VALUE "OriginalFilename", "MW4.exe"
             VALUE "ProductName", "MouseWrap"
-            VALUE "ProductVersion", "4.1"
+            VALUE "ProductVersion", "4.2"
         END
     END
     BLOCK "VarFileInfo"

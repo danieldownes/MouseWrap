@@ -136,7 +136,7 @@ void TaskBarCheckCommand(WORD cmd)
         PostQuitMessage(0);
         break;
     case IDM_BUYMEACOFFEE:
-        ShellExecuteW(NULL, L"open", L"https://buymeacoffee.com/danieldownes/mouse-wrap-4", NULL, NULL, SW_SHOWNORMAL);
+        ShellExecuteW(NULL, L"open", L"https://ko-fi.com/c/29d0de73a1", NULL, NULL, SW_SHOWNORMAL);
         break;
     case IDM_VERSIONCHECK:
         ShellExecuteW(NULL, L"open", L"https://danieldownes.github.io/MouseWrap/check/?version=" WPRODVER_STR, NULL, NULL, SW_SHOWNORMAL);
