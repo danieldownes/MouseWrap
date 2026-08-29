@@ -39,11 +39,18 @@ BOOL IsPointNearEdge(POINT pt, me_Edge edge, int tolerance);
 // Used to strip taskbar-boundary edges from the workspace contour.
 void RemoveEdgesNotOnContour(EdgeList* list, const EdgeList* reference);
 
-// Edge state management
+// Edge state management.  Edge states are stored per monitor layout
+// (see GetLayoutId); Save/LoadEdgeStates act on the current layout.
 EdgeState GetEdgeState(me_Edge edge);
 void CycleEdgeState(me_Edge edge);
 void SaveEdgeStates(void);
 void LoadEdgeStates(void);
+
+// Identify a monitor layout: the same set of desktop rectangles, in any
+// order, always yields the same id.  Writes a NUL-terminated 16-char hex
+// string to out (cch must be >= LAYOUT_ID_CCH).
+#define LAYOUT_ID_CCH 17
+void GetLayoutId(const me_Rect* rects, SIZE_T count, WCHAR* out, size_t cch);
 
 // Configurable delay for EDGE_DELAYED edges (milliseconds)
 extern DWORD g_edge_delay_ms;

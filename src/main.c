@@ -58,7 +58,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	OutputDebugStringA("MouseWrap: Tray icon created.\n");
 
     CreateContextMenu();
-    LoadEdgeStates();
+    // Edge states are per monitor layout and are loaded by UpdateMonitorContours
     LoadDelayMs();
     LoadDragWrapMode();
     wrapEnabled = FALSE;

@@ -3,6 +3,7 @@
 #include "multimonitor_edges.h"
 #include "multimonitor_contour.h"
 #include <stdio.h> // For temporary debugging
+#include <stdlib.h>
 
 // Global variable to store the calculated desktop contour
 EdgeList* g_desktop_contour = NULL;
@@ -21,6 +22,8 @@ SIZE_T g_monitor_count_workspace = 0;
 EdgeList* g_disabled_edges = NULL;
 // Edges the user has set to delayed wrapping (100 ms pause then wrap)
 EdgeList* g_delayed_edges = NULL;
+// Id of the layout whose edge states are currently loaded ("" = none yet)
+static WCHAR g_layout_id[LAYOUT_ID_CCH] = L"";
 
 BOOL wrapEnabled = TRUE;
 
@@ -166,26 +169,16 @@ void UpdateMonitorContours() { // Renamed from UpdateDesktopContour
         OutputDebugStringA("Desktop Contour: No monitors or 0 edges.\n");
     }
 
-    // Prune disabled/delayed edges that no longer exist in the new desktop contour
-    if (g_desktop_contour != NULL) {
-        EdgeList* lists[] = { g_disabled_edges, g_delayed_edges };
-        for (int li = 0; li < 2; li++) {
-            EdgeList* el = lists[li];
-            if (el == NULL) continue;
-            for (SIZE_T i = el->size; i > 0; i--) {
-                me_Edge de = el->edges[i - 1];
-                BOOL still_exists = FALSE;
-                for (SIZE_T j = 0; j < g_desktop_contour->size; j++) {
-                    if (me_edge_equals(&de, &g_desktop_contour->edges[j])) {
-                        still_exists = TRUE;
-                        break;
-                    }
-                }
-                if (!still_exists)
-                    edge_list_remove(el, de);
-            }
+    // Switch to the edge states saved for this monitor layout.  Turning a
+    // monitor off yields a different layout (with its own states); when the
+    // original arrangement returns, its states are restored untouched.
+    {
+        WCHAR id[LAYOUT_ID_CCH];
+        GetLayoutId(g_monitor_rects_desktop, g_monitor_count_desktop, id, LAYOUT_ID_CCH);
+        if (wcscmp(id, g_layout_id) != 0) {
+            wcscpy_s(g_layout_id, LAYOUT_ID_CCH, id);
+            LoadEdgeStates();
         }
-        SaveEdgeStates();
     }
 
     // --- Workspace Contour ---
@@ -330,8 +323,70 @@ void CycleEdgeState(me_Edge edge) {
 }
 
 #define MW_REG_KEY          L"Software\\MouseWrap"
+#define MW_REG_LAYOUTS_KEY  L"Software\\MouseWrap\\Layouts"
 #define MW_REG_VAL_DISABLED L"DisabledEdges"
 #define MW_REG_VAL_DELAYED  L"DelayedEdges"
+#define MW_REG_VAL_MONITORS L"Monitors"
+
+static int CompareRects(const void* a, const void* b) {
+    const me_Rect* ra = (const me_Rect*)a;
+    const me_Rect* rb = (const me_Rect*)b;
+    if (ra->xMin != rb->xMin) return ra->xMin < rb->xMin ? -1 : 1;
+    if (ra->yMin != rb->yMin) return ra->yMin < rb->yMin ? -1 : 1;
+    if (ra->xMax != rb->xMax) return ra->xMax < rb->xMax ? -1 : 1;
+    if (ra->yMax != rb->yMax) return ra->yMax < rb->yMax ? -1 : 1;
+    return 0;
+}
+
+void GetLayoutId(const me_Rect* rects, SIZE_T count, WCHAR* out, size_t cch) {
+    if (out == NULL || cch == 0) return;
+    out[0] = 0;
+    if (cch < LAYOUT_ID_CCH) return;
+
+    // FNV-1a 64-bit over the sorted rectangles so monitor enumeration order
+    // does not matter.
+    unsigned long long h = 1469598103934665603ULL;
+    me_Rect* sorted = NULL;
+    if (rects != NULL && count > 0) {
+        sorted = (me_Rect*)HeapAlloc(GetProcessHeap(), 0, count * sizeof(me_Rect));
+        if (sorted == NULL) return;
+        memcpy(sorted, rects, count * sizeof(me_Rect));
+        qsort(sorted, count, sizeof(me_Rect), CompareRects);
+        const unsigned char* bytes = (const unsigned char*)sorted;
+        for (SIZE_T i = 0; i < count * sizeof(me_Rect); i++) {
+            h ^= bytes[i];
+            h *= 1099511628211ULL;
+        }
+        HeapFree(GetProcessHeap(), 0, sorted);
+    }
+    swprintf_s(out, cch, L"%016llX", h);
+}
+
+// Open (or create) the registry key holding the current layout's edge states.
+static HKEY OpenLayoutKey(REGSAM sam, BOOL create) {
+    if (g_layout_id[0] == 0) return NULL;
+    WCHAR path[128];
+    swprintf_s(path, 128, L"%s\\%s", MW_REG_LAYOUTS_KEY, g_layout_id);
+    HKEY hKey = NULL;
+    LSTATUS st = create
+        ? RegCreateKeyExW(HKEY_CURRENT_USER, path, 0, NULL, 0, sam, NULL, &hKey, NULL)
+        : RegOpenKeyExW(HKEY_CURRENT_USER, path, 0, sam, &hKey);
+    return (st == ERROR_SUCCESS) ? hKey : NULL;
+}
+
+// Human-readable description of the current layout, stored alongside the
+// edge states so the registry is understandable when looking at it by hand.
+static void SaveLayoutDescription(HKEY hKey) {
+    WCHAR desc[MAX_PATH * 2] = L"";
+    size_t len = 0;
+    for (SIZE_T i = 0; i < g_monitor_count_desktop && len < MAX_PATH * 2 - 48; i++) {
+        const me_Rect* r = &g_monitor_rects_desktop[i];
+        len += (size_t)swprintf_s(desc + len, MAX_PATH * 2 - len, L"%s%d,%d,%d,%d",
+                                  i ? L";" : L"", r->xMin, r->yMin, r->xMax, r->yMax);
+    }
+    RegSetValueExW(hKey, MW_REG_VAL_MONITORS, 0, REG_SZ,
+                   (const BYTE*)desc, (DWORD)((len + 1) * sizeof(WCHAR)));
+}
 
 static void SaveEdgeListToRegistry(HKEY hKey, const WCHAR* valueName, EdgeList* list) {
     if (list == NULL || list->size == 0) {
@@ -365,22 +420,43 @@ static void LoadEdgeListFromRegistry(HKEY hKey, const WCHAR* valueName, EdgeList
 }
 
 void SaveEdgeStates(void) {
-    HKEY hKey;
-    if (RegCreateKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, NULL, 0,
-                        KEY_SET_VALUE, NULL, &hKey, NULL) != ERROR_SUCCESS)
-        return;
+    HKEY hKey = OpenLayoutKey(KEY_SET_VALUE, TRUE);
+    if (hKey == NULL) return;
     SaveEdgeListToRegistry(hKey, MW_REG_VAL_DISABLED, g_disabled_edges);
     SaveEdgeListToRegistry(hKey, MW_REG_VAL_DELAYED,  g_delayed_edges);
+    SaveLayoutDescription(hKey);
     RegCloseKey(hKey);
 }
 
 void LoadEdgeStates(void) {
-    HKEY hKey;
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, KEY_QUERY_VALUE, &hKey) != ERROR_SUCCESS)
+    if (g_layout_id[0] == 0) return; // no layout known yet
+
+    // Start from a clean slate: states belong to the layout, never carry over
+    if (g_disabled_edges != NULL) { edge_list_free(g_disabled_edges); g_disabled_edges = NULL; }
+    if (g_delayed_edges  != NULL) { edge_list_free(g_delayed_edges);  g_delayed_edges  = NULL; }
+
+    HKEY hKey = OpenLayoutKey(KEY_QUERY_VALUE, FALSE);
+    if (hKey != NULL) {
+        LoadEdgeListFromRegistry(hKey, MW_REG_VAL_DISABLED, &g_disabled_edges);
+        LoadEdgeListFromRegistry(hKey, MW_REG_VAL_DELAYED,  &g_delayed_edges);
+        RegCloseKey(hKey);
+        return;
+    }
+
+    // Nothing saved for this layout.  Migrate the pre-4.2 global values (if
+    // any) to it once, so existing users keep their settings.
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, KEY_QUERY_VALUE | KEY_SET_VALUE, &hKey) != ERROR_SUCCESS)
         return;
     LoadEdgeListFromRegistry(hKey, MW_REG_VAL_DISABLED, &g_disabled_edges);
     LoadEdgeListFromRegistry(hKey, MW_REG_VAL_DELAYED,  &g_delayed_edges);
+    BOOL migrated = (g_disabled_edges && g_disabled_edges->size) || (g_delayed_edges && g_delayed_edges->size);
+    if (migrated) {
+        RegDeleteValueW(hKey, MW_REG_VAL_DISABLED);
+        RegDeleteValueW(hKey, MW_REG_VAL_DELAYED);
+    }
     RegCloseKey(hKey);
+    if (migrated)
+        SaveEdgeStates();
 }
 
 // Configurable delay for EDGE_DELAYED edges

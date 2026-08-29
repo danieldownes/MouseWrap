@@ -52,6 +52,12 @@ extern void test_resolve_dragging_delayed_mode(void);
 extern void test_resolve_dragging_instant_mode(void);
 extern void test_resolve_dragging_none_mode(void);
 extern void test_resolve_dragging_only_affects_wrap_edges(void);
+extern void test_layout_id_is_16_hex_chars(void);
+extern void test_layout_id_is_deterministic(void);
+extern void test_layout_id_ignores_monitor_order(void);
+extern void test_layout_id_differs_when_monitor_removed(void);
+extern void test_layout_id_differs_for_different_geometry(void);
+extern void test_layout_id_small_buffer_is_empty_string(void);
 
 int main(void) {
     UNITY_BEGIN();
@@ -115,6 +121,12 @@ int main(void) {
     RUN_TEST(test_resolve_dragging_instant_mode);
     RUN_TEST(test_resolve_dragging_none_mode);
     RUN_TEST(test_resolve_dragging_only_affects_wrap_edges);
+    RUN_TEST(test_layout_id_is_16_hex_chars);
+    RUN_TEST(test_layout_id_is_deterministic);
+    RUN_TEST(test_layout_id_ignores_monitor_order);
+    RUN_TEST(test_layout_id_differs_when_monitor_removed);
+    RUN_TEST(test_layout_id_differs_for_different_geometry);
+    RUN_TEST(test_layout_id_small_buffer_is_empty_string);
 
     return UNITY_END();
 }

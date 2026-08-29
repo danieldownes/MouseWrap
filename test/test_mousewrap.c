@@ -1,5 +1,7 @@
 #include "unity.h"
 #include <windows.h>
+#include <wchar.h>
+#include <wctype.h>
 #include "mouse_wrap.h"
 
 /* ---- IsPointNearEdge — vertical edge ---- */
@@ -162,4 +164,58 @@ void test_resolve_dragging_only_affects_wrap_edges(void) {
     TEST_ASSERT_EQUAL_INT(EDGE_DELAYED, ResolveEdgeState(EDGE_DELAYED, TRUE));
     g_drag_wrap_mode = DRAG_WRAP_DELAYED;
     TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP,  ResolveEdgeState(EDGE_NOWRAP,  TRUE));
+}
+
+/* ---- GetLayoutId — per-layout settings key ---- */
+
+void test_layout_id_is_16_hex_chars(void) {
+    me_Rect r = me_create_rect(0, 1920, 0, 1080);
+    WCHAR id[LAYOUT_ID_CCH];
+    GetLayoutId(&r, 1, id, LAYOUT_ID_CCH);
+    TEST_ASSERT_EQUAL_size_t(16, wcslen(id));
+    for (int i = 0; i < 16; i++)
+        TEST_ASSERT_TRUE(iswxdigit(id[i]));
+}
+
+void test_layout_id_is_deterministic(void) {
+    me_Rect r = me_create_rect(0, 1920, 0, 1080);
+    WCHAR a[LAYOUT_ID_CCH], b[LAYOUT_ID_CCH];
+    GetLayoutId(&r, 1, a, LAYOUT_ID_CCH);
+    GetLayoutId(&r, 1, b, LAYOUT_ID_CCH);
+    TEST_ASSERT_EQUAL_INT(0, wcscmp(a, b));
+}
+
+/* Monitor enumeration order can change between sessions; the id must not. */
+void test_layout_id_ignores_monitor_order(void) {
+    me_Rect ab[2] = { me_create_rect(0, 1920, 0, 1080), me_create_rect(1920, 3840, 0, 1080) };
+    me_Rect ba[2] = { me_create_rect(1920, 3840, 0, 1080), me_create_rect(0, 1920, 0, 1080) };
+    WCHAR a[LAYOUT_ID_CCH], b[LAYOUT_ID_CCH];
+    GetLayoutId(ab, 2, a, LAYOUT_ID_CCH);
+    GetLayoutId(ba, 2, b, LAYOUT_ID_CCH);
+    TEST_ASSERT_EQUAL_INT(0, wcscmp(a, b));
+}
+
+/* Turning a monitor off yields a different layout, so a different id. */
+void test_layout_id_differs_when_monitor_removed(void) {
+    me_Rect two[2] = { me_create_rect(0, 1920, 0, 1080), me_create_rect(1920, 3840, 0, 1080) };
+    WCHAR a[LAYOUT_ID_CCH], b[LAYOUT_ID_CCH];
+    GetLayoutId(two, 2, a, LAYOUT_ID_CCH);
+    GetLayoutId(two, 1, b, LAYOUT_ID_CCH);
+    TEST_ASSERT_NOT_EQUAL(0, wcscmp(a, b));
+}
+
+void test_layout_id_differs_for_different_geometry(void) {
+    me_Rect r1 = me_create_rect(0, 1920, 0, 1080);
+    me_Rect r2 = me_create_rect(0, 2560, 0, 1440);
+    WCHAR a[LAYOUT_ID_CCH], b[LAYOUT_ID_CCH];
+    GetLayoutId(&r1, 1, a, LAYOUT_ID_CCH);
+    GetLayoutId(&r2, 1, b, LAYOUT_ID_CCH);
+    TEST_ASSERT_NOT_EQUAL(0, wcscmp(a, b));
+}
+
+void test_layout_id_small_buffer_is_empty_string(void) {
+    me_Rect r = me_create_rect(0, 1920, 0, 1080);
+    WCHAR id[4] = L"xyz";
+    GetLayoutId(&r, 1, id, 4);
+    TEST_ASSERT_EQUAL_INT(0, id[0]);
 }
