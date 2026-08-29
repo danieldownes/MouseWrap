@@ -536,7 +536,10 @@ BOOL IsPrimaryButtonDown(void) {
 }
 
 EdgeState ResolveEdgeState(EdgeState configured, BOOL dragging) {
-    if (!dragging || configured != EDGE_WRAP)
+    // Not dragging: the edge's own setting applies.
+    // Dragging: the "While dragging" mode takes precedence over Wrap and
+    // Delayed edges alike.  A No Wrap edge is a hard off and never wraps.
+    if (!dragging || configured == EDGE_NOWRAP)
         return configured;
     switch (g_drag_wrap_mode) {
         case DRAG_WRAP_DELAYED: return EDGE_DELAYED;

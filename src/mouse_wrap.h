@@ -58,14 +58,14 @@ extern DWORD g_edge_delay_ms;
 void SaveDelayMs(void);
 void LoadDelayMs(void);
 
-// How edges set to EDGE_WRAP behave while the primary mouse button is held
-// (i.e. while dragging a window or selection).  Edges set to Delayed or
-// No Wrap keep their own state regardless of this setting.
+// How wrapping behaves while the primary mouse button is held (i.e. while
+// dragging a window or selection).  This takes precedence over each edge's
+// own Wrap / Delayed setting; edges set to No Wrap never wrap regardless.
 // Values match the order of the "While dragging" dropdown in Options.
 typedef enum {
-    DRAG_WRAP_DELAYED = 0,  // Wrap edges act as Delayed while dragging (default)
-    DRAG_WRAP_INSTANT = 1,  // Wrap edges wrap instantly, as when not dragging
-    DRAG_WRAP_NONE    = 2   // Wrap edges do not wrap while dragging
+    DRAG_WRAP_DELAYED = 0,  // every wrapping edge acts as Delayed while dragging (default)
+    DRAG_WRAP_INSTANT = 1,  // every wrapping edge wraps instantly while dragging
+    DRAG_WRAP_NONE    = 2   // nothing wraps while dragging
 } DragWrapMode;
 
 extern DragWrapMode g_drag_wrap_mode;
@@ -75,8 +75,8 @@ void LoadDragWrapMode(void);
 // TRUE while the primary mouse button (honouring SM_SWAPBUTTON) is held down.
 BOOL IsPrimaryButtonDown(void);
 
-// Apply g_drag_wrap_mode to an edge's configured state.  Only EDGE_WRAP
-// edges are affected, and only while dragging.
+// Apply g_drag_wrap_mode to an edge's configured state while dragging.
+// Wrap and Delayed edges follow the drag mode; No Wrap edges stay No Wrap.
 EdgeState ResolveEdgeState(EdgeState configured, BOOL dragging);
 
 #endif // MOUSE_WRAP_H

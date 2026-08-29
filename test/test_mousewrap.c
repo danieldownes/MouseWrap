@@ -214,15 +214,24 @@ void test_resolve_dragging_none_mode(void) {
     TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP, ResolveEdgeState(EDGE_WRAP, TRUE));
 }
 
-/* Edges the user set to Delayed / No Wrap are never changed by the drag mode. */
-void test_resolve_dragging_only_affects_wrap_edges(void) {
-    g_drag_wrap_mode = DRAG_WRAP_INSTANT;
-    TEST_ASSERT_EQUAL_INT(EDGE_DELAYED, ResolveEdgeState(EDGE_DELAYED, TRUE));
-    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP,  ResolveEdgeState(EDGE_NOWRAP,  TRUE));
+/* The drag mode takes precedence over Delayed edges too... */
+void test_resolve_dragging_overrides_delayed_edges(void) {
     g_drag_wrap_mode = DRAG_WRAP_NONE;
-    TEST_ASSERT_EQUAL_INT(EDGE_DELAYED, ResolveEdgeState(EDGE_DELAYED, TRUE));
+    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP,  ResolveEdgeState(EDGE_DELAYED, TRUE));
+    g_drag_wrap_mode = DRAG_WRAP_INSTANT;
+    TEST_ASSERT_EQUAL_INT(EDGE_WRAP,    ResolveEdgeState(EDGE_DELAYED, TRUE));
     g_drag_wrap_mode = DRAG_WRAP_DELAYED;
-    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP,  ResolveEdgeState(EDGE_NOWRAP,  TRUE));
+    TEST_ASSERT_EQUAL_INT(EDGE_DELAYED, ResolveEdgeState(EDGE_DELAYED, TRUE));
+}
+
+/* ...but an edge set to No Wrap is a hard off and never wraps while dragging. */
+void test_resolve_dragging_never_enables_nowrap_edges(void) {
+    g_drag_wrap_mode = DRAG_WRAP_INSTANT;
+    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP, ResolveEdgeState(EDGE_NOWRAP, TRUE));
+    g_drag_wrap_mode = DRAG_WRAP_DELAYED;
+    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP, ResolveEdgeState(EDGE_NOWRAP, TRUE));
+    g_drag_wrap_mode = DRAG_WRAP_NONE;
+    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP, ResolveEdgeState(EDGE_NOWRAP, TRUE));
 }
 
 /* ---- GetLayoutId — per-layout settings key ---- */
