@@ -11,6 +11,8 @@
 #define IDC_EDGE_LEGEND                 2002
 #define IDC_DELAY_SLIDER                2003
 #define IDC_DELAY_LABEL                 2004
+#define IDC_DRAG_MODE_LABEL             2005
+#define IDC_DRAG_MODE_COMBO             2006
 #define IDM_OPTIONS                     1005
 
 // Next default values for new objects

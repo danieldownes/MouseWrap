@@ -128,3 +128,38 @@ void test_remove_taskbar_edge_null_reference_removes_all(void) {
     TEST_ASSERT_EQUAL_size_t(0, work_contour->size);
     edge_list_free(work_contour);
 }
+
+/* ---- ResolveEdgeState — "While dragging" behaviour for Wrap edges ---- */
+
+void test_resolve_not_dragging_keeps_state(void) {
+    g_drag_wrap_mode = DRAG_WRAP_NONE;
+    TEST_ASSERT_EQUAL_INT(EDGE_WRAP,    ResolveEdgeState(EDGE_WRAP,    FALSE));
+    TEST_ASSERT_EQUAL_INT(EDGE_DELAYED, ResolveEdgeState(EDGE_DELAYED, FALSE));
+    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP,  ResolveEdgeState(EDGE_NOWRAP,  FALSE));
+}
+
+void test_resolve_dragging_delayed_mode(void) {
+    g_drag_wrap_mode = DRAG_WRAP_DELAYED;
+    TEST_ASSERT_EQUAL_INT(EDGE_DELAYED, ResolveEdgeState(EDGE_WRAP, TRUE));
+}
+
+void test_resolve_dragging_instant_mode(void) {
+    g_drag_wrap_mode = DRAG_WRAP_INSTANT;
+    TEST_ASSERT_EQUAL_INT(EDGE_WRAP, ResolveEdgeState(EDGE_WRAP, TRUE));
+}
+
+void test_resolve_dragging_none_mode(void) {
+    g_drag_wrap_mode = DRAG_WRAP_NONE;
+    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP, ResolveEdgeState(EDGE_WRAP, TRUE));
+}
+
+/* Edges the user set to Delayed / No Wrap are never changed by the drag mode. */
+void test_resolve_dragging_only_affects_wrap_edges(void) {
+    g_drag_wrap_mode = DRAG_WRAP_INSTANT;
+    TEST_ASSERT_EQUAL_INT(EDGE_DELAYED, ResolveEdgeState(EDGE_DELAYED, TRUE));
+    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP,  ResolveEdgeState(EDGE_NOWRAP,  TRUE));
+    g_drag_wrap_mode = DRAG_WRAP_NONE;
+    TEST_ASSERT_EQUAL_INT(EDGE_DELAYED, ResolveEdgeState(EDGE_DELAYED, TRUE));
+    g_drag_wrap_mode = DRAG_WRAP_DELAYED;
+    TEST_ASSERT_EQUAL_INT(EDGE_NOWRAP,  ResolveEdgeState(EDGE_NOWRAP,  TRUE));
+}

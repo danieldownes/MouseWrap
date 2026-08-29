@@ -4,6 +4,7 @@
 
 Changes:
 
+ - "While dragging" option: choose how edges set to Wrap behave while the primary mouse button is held — Delayed Wrap (default), Wrap instantly, or No Wrap. Set via a dropdown in the Options dialog (hover for a hint) and persisted in the registry.
  - No wrapping at the taskbar boundary: the edge where the work area meets the taskbar is no longer treated as a wrap edge, so the cursor can rest against the taskbar without jumping to the opposite side.
 
 ## Version 4.1:

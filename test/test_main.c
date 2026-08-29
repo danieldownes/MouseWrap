@@ -47,6 +47,11 @@ extern void test_remove_taskbar_edge_bottom_taskbar(void);
 extern void test_remove_taskbar_edge_left_taskbar(void);
 extern void test_remove_taskbar_edge_no_taskbar_keeps_all(void);
 extern void test_remove_taskbar_edge_null_reference_removes_all(void);
+extern void test_resolve_not_dragging_keeps_state(void);
+extern void test_resolve_dragging_delayed_mode(void);
+extern void test_resolve_dragging_instant_mode(void);
+extern void test_resolve_dragging_none_mode(void);
+extern void test_resolve_dragging_only_affects_wrap_edges(void);
 
 int main(void) {
     UNITY_BEGIN();
@@ -105,6 +110,11 @@ int main(void) {
     RUN_TEST(test_remove_taskbar_edge_left_taskbar);
     RUN_TEST(test_remove_taskbar_edge_no_taskbar_keeps_all);
     RUN_TEST(test_remove_taskbar_edge_null_reference_removes_all);
+    RUN_TEST(test_resolve_not_dragging_keeps_state);
+    RUN_TEST(test_resolve_dragging_delayed_mode);
+    RUN_TEST(test_resolve_dragging_instant_mode);
+    RUN_TEST(test_resolve_dragging_none_mode);
+    RUN_TEST(test_resolve_dragging_only_affects_wrap_edges);
 
     return UNITY_END();
 }

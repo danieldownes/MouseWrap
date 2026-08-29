@@ -70,6 +70,7 @@ typedef struct {
     SIZE_T     contourCount;
     BOOL     dark;
     HBRUSH   hBrushBg;
+    HWND     hTip;
     // Cached transform for hit testing (set during draw)
     double   scale;
     int      offX, offY;
@@ -369,6 +370,7 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             // Theme Close button for dark mode
             HWND hBtn = GetDlgItem(hDlg, IDCANCEL);
             SetWindowTheme(hBtn, L"DarkMode_Explorer", NULL);
+            SetWindowTheme(GetDlgItem(hDlg, IDC_DRAG_MODE_COMBO), L"DarkMode_CFD", NULL);
         } else {
             data->hBrushBg = NULL;
         }
@@ -385,6 +387,43 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             WCHAR buf[32];
             wsprintfW(buf, L"Delay: %lu ms", g_edge_delay_ms);
             SetDlgItemTextW(hDlg, IDC_DELAY_LABEL, buf);
+        }
+
+        // Initialize "While dragging" dropdown — order matches DragWrapMode
+        {
+            HWND hCombo = GetDlgItem(hDlg, IDC_DRAG_MODE_COMBO);
+            static const WCHAR* modes[] = { L"Delayed Wrap", L"Wrap instantly", L"No Wrap" };
+            for (int i = 0; i < 3; i++)
+                SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)modes[i]);
+            SendMessageW(hCombo, CB_SETCURSEL, (WPARAM)g_drag_wrap_mode, 0);
+        }
+
+        // Tooltip explaining the "While dragging" setting (label + dropdown)
+        {
+            HWND hTip = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, NULL,
+                                        WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
+                                        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                        hDlg, NULL, GetModuleHandleW(NULL), NULL);
+            if (hTip) {
+                data->hTip = hTip;
+                SendMessageW(hTip, TTM_SETMAXTIPWIDTH, 0, 260);
+                SendMessageW(hTip, TTM_SETDELAYTIME, TTDT_AUTOPOP, 15000);
+                static WCHAR hint[] =
+                    L"While mouse button is down, and the related edge is set to \"Wrap\", "
+                    L"then wrapping motion will respect this setting.";
+                int ids[] = { IDC_DRAG_MODE_LABEL, IDC_DRAG_MODE_COMBO };
+                for (int i = 0; i < 2; i++) {
+                    TOOLINFOW ti;
+                    memset(&ti, 0, sizeof(ti));
+                    // V2 size: the app has no comctl32 v6 manifest, and v5 rejects the larger struct
+                    ti.cbSize   = TTTOOLINFOW_V2_SIZE;
+                    ti.uFlags   = TTF_IDISHWND | TTF_SUBCLASS;
+                    ti.hwnd     = hDlg;
+                    ti.uId      = (UINT_PTR)GetDlgItem(hDlg, ids[i]);
+                    ti.lpszText = hint;
+                    SendMessageW(hTip, TTM_ADDTOOLW, 0, (LPARAM)&ti);
+                }
+            }
         }
 
         SetTimer(hDlg, IDT_CURSOR_TRACK, CURSOR_TRACK_MS, NULL);
@@ -417,6 +456,16 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
         data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
         if (data && data->hBrushBg)
             return (INT_PTR)data->hBrushBg;
+        break;
+
+    case WM_CTLCOLORLISTBOX:
+        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+        if (data && data->dark && data->hBrushBg) {
+            HDC hdcList = (HDC)wParam;
+            SetTextColor(hdcList, RGB(255, 255, 255));
+            SetBkColor(hdcList, CLR_DARK_BG);
+            return (INT_PTR)data->hBrushBg;
+        }
         break;
 
     case WM_CTLCOLORSTATIC:
@@ -460,6 +509,14 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             HandlePreviewClick(hDlg, data);
             return TRUE;
         }
+        if (LOWORD(wParam) == IDC_DRAG_MODE_COMBO && HIWORD(wParam) == CBN_SELCHANGE) {
+            LRESULT sel = SendMessageW((HWND)lParam, CB_GETCURSEL, 0, 0);
+            if (sel >= DRAG_WRAP_DELAYED && sel <= DRAG_WRAP_NONE) {
+                g_drag_wrap_mode = (DragWrapMode)sel;
+                SaveDragWrapMode();
+            }
+            return TRUE;
+        }
         break;
 
     case WM_CLOSE:
@@ -477,6 +534,8 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 void ShowOptionsDialog(HWND hwndParent)
 {
     extern HINSTANCE hInst;
+    INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_BAR_CLASSES | ICC_WIN95_CLASSES };
+    InitCommonControlsEx(&icc);
     OptionsDlgData data;
     memset(&data, 0, sizeof(data));
     DialogBoxParamW(hInst, MAKEINTRESOURCEW(IDD_OPTIONS), hwndParent, OptionsDlgProc, (LPARAM)&data);

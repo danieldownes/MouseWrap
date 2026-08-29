@@ -60,6 +60,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     CreateContextMenu();
     LoadEdgeStates();
     LoadDelayMs();
+    LoadDragWrapMode();
     wrapEnabled = FALSE;
     ToggleWrapEnabled(hwnd);
 

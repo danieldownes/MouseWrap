@@ -412,6 +412,53 @@ void LoadDelayMs(void) {
     RegCloseKey(hKey);
 }
 
+// Behaviour of EDGE_WRAP edges while dragging
+DragWrapMode g_drag_wrap_mode = DRAG_WRAP_DELAYED;
+
+#define MW_REG_VAL_DRAG_MODE L"DragWrapMode"
+
+void SaveDragWrapMode(void) {
+    HKEY hKey;
+    if (RegCreateKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, NULL, 0,
+                        KEY_SET_VALUE, NULL, &hKey, NULL) != ERROR_SUCCESS)
+        return;
+    DWORD val = (DWORD)g_drag_wrap_mode;
+    RegSetValueExW(hKey, MW_REG_VAL_DRAG_MODE, 0, REG_DWORD,
+                   (const BYTE*)&val, sizeof(val));
+    RegCloseKey(hKey);
+}
+
+void LoadDragWrapMode(void) {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, MW_REG_KEY, 0, KEY_QUERY_VALUE, &hKey) != ERROR_SUCCESS)
+        return;
+    DWORD cbData = sizeof(DWORD);
+    DWORD dwType = 0;
+    DWORD val = 0;
+    if (RegQueryValueExW(hKey, MW_REG_VAL_DRAG_MODE, NULL, &dwType, (BYTE*)&val, &cbData) == ERROR_SUCCESS
+        && dwType == REG_DWORD && val <= DRAG_WRAP_NONE) {
+        g_drag_wrap_mode = (DragWrapMode)val;
+    }
+    RegCloseKey(hKey);
+}
+
+BOOL IsPrimaryButtonDown(void) {
+    // GetAsyncKeyState reports physical buttons, so honour a swapped mouse.
+    int vk = GetSystemMetrics(SM_SWAPBUTTON) ? VK_RBUTTON : VK_LBUTTON;
+    return (GetAsyncKeyState(vk) & 0x8000) != 0;
+}
+
+EdgeState ResolveEdgeState(EdgeState configured, BOOL dragging) {
+    if (!dragging || configured != EDGE_WRAP)
+        return configured;
+    switch (g_drag_wrap_mode) {
+        case DRAG_WRAP_DELAYED: return EDGE_DELAYED;
+        case DRAG_WRAP_NONE:    return EDGE_NOWRAP;
+        case DRAG_WRAP_INSTANT:
+        default:                return EDGE_WRAP;
+    }
+}
+
 // Delay timer state for EDGE_DELAYED edges
 static me_Edge g_delay_edge;
 static BOOL    g_delay_active = FALSE;
@@ -419,7 +466,7 @@ static DWORD   g_delay_start  = 0;
 
 // Check a contour for an edge hit and wrap the cursor if found.
 // Returns TRUE if a wrap was performed.
-static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const char* contour_type_str)
+static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const char* contour_type_str, BOOL dragging)
 {
     if (contour == NULL || contour->size == 0) return FALSE;
 
@@ -446,7 +493,7 @@ static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const ch
         if (!IsPointNearEdge(current_pos, hit_edge, PIXEL_TOLERANCE))
             continue;
 
-        EdgeState state = GetEdgeState(hit_edge);
+        EdgeState state = ResolveEdgeState(GetEdgeState(hit_edge), dragging);
         if (state == EDGE_NOWRAP)
             continue;
 
@@ -505,9 +552,10 @@ void WrapMouseWhileDragging()
 
     POINT current_pos;
     GetCursorPos(&current_pos);
+    BOOL dragging = IsPrimaryButtonDown();
 
     // Primary: always check desktop contour
-    if (TryWrapAgainstContour(current_pos, g_desktop_contour, "Desktop"))
+    if (TryWrapAgainstContour(current_pos, g_desktop_contour, "Desktop", dragging))
         return;
 
     // Fallback: check workspace contour less frequently to handle a cursor
@@ -516,7 +564,7 @@ void WrapMouseWhileDragging()
     workspace_tick++;
     if (workspace_tick >= WORKSPACE_CHECK_INTERVAL) {
         workspace_tick = 0;
-        if (TryWrapAgainstContour(current_pos, g_workspace_contour, "Workspace"))
+        if (TryWrapAgainstContour(current_pos, g_workspace_contour, "Workspace", dragging))
             return;
     }
 
