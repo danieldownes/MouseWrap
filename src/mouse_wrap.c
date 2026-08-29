@@ -29,6 +29,46 @@ typedef struct {
     BOOL isDragging; 
 } MouseData;
 
+// Check whether two axis-aligned edges lie on the same line and overlap.
+// Used so that a disabled desktop edge also blocks the corresponding
+// workspace-contour edge (which may be a sub-segment shifted by the taskbar),
+// and to identify workspace edges that sit on the taskbar boundary.
+static BOOL EdgesOverlap(const me_Edge* a, const me_Edge* b) {
+    if (a->x1 == a->x2 && b->x1 == b->x2 && a->x1 == b->x1) {
+        // Both vertical at the same x — check y-range overlap
+        return (a->y1 < b->y2 && b->y1 < a->y2);
+    }
+    if (a->y1 == a->y2 && b->y1 == b->y2 && a->y1 == b->y1) {
+        // Both horizontal at the same y — check x-range overlap
+        return (a->x1 < b->x2 && b->x1 < a->x2);
+    }
+    return FALSE;
+}
+
+// Remove every edge in list that does not lie on some edge of reference.
+// Applied to the workspace contour with the desktop contour as reference:
+// the only workspace edges that are NOT on a desktop edge are the ones where
+// the work area meets the taskbar, and we never want to wrap across those.
+void RemoveEdgesNotOnContour(EdgeList* list, const EdgeList* reference) {
+    if (list == NULL) return;
+    SIZE_T i = 0;
+    while (i < list->size) {
+        BOOL on_reference = FALSE;
+        if (reference != NULL) {
+            for (SIZE_T j = 0; j < reference->size; j++) {
+                if (EdgesOverlap(&list->edges[i], &reference->edges[j])) {
+                    on_reference = TRUE;
+                    break;
+                }
+            }
+        }
+        if (on_reference)
+            i++;
+        else
+            edge_list_remove(list, list->edges[i]);
+    }
+}
+
 // Structure to help collect monitor RECTs
 typedef struct {
     me_Rect* rects;
@@ -170,6 +210,8 @@ void UpdateMonitorContours() { // Renamed from UpdateDesktopContour
             OutputDebugStringA(dbg_buf);
         }
         g_workspace_contour = get_contour(g_monitor_rects_workspace, g_monitor_count_workspace);
+        // Drop the edges where the work area meets the taskbar — no wrapping there.
+        RemoveEdgesNotOnContour(g_workspace_contour, g_desktop_contour);
         sprintf_s(dbg_buf, sizeof(dbg_buf), "Workspace Contour Edges: %zu\n", g_workspace_contour ? g_workspace_contour->size : 0);
         OutputDebugStringA(dbg_buf);
         if (g_workspace_contour) {
@@ -236,21 +278,6 @@ BOOL IsPointNearEdge(POINT pt, me_Edge edge, int tolerance) {
         if (abs(pt.y - edge.y1) <= tolerance) {
             return (pt.x >= edge.x1 && pt.x <= edge.x2);
         }
-    }
-    return FALSE;
-}
-
-// Check whether two axis-aligned edges lie on the same line and overlap.
-// Used so that a disabled desktop edge also blocks the corresponding
-// workspace-contour edge (which may be a sub-segment shifted by the taskbar).
-static BOOL EdgesOverlap(const me_Edge* a, const me_Edge* b) {
-    if (a->x1 == a->x2 && b->x1 == b->x2 && a->x1 == b->x1) {
-        // Both vertical at the same x — check y-range overlap
-        return (a->y1 < b->y2 && b->y1 < a->y2);
-    }
-    if (a->y1 == a->y2 && b->y1 == b->y2 && a->y1 == b->y1) {
-        // Both horizontal at the same y — check x-range overlap
-        return (a->x1 < b->x2 && b->x1 < a->x2);
     }
     return FALSE;
 }
@@ -465,8 +492,9 @@ static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const ch
 }
 
 // How many timer ticks between workspace contour checks.
-// The workspace contour catches cursor stuck at taskbar edges during window
-// drags.  Checking every 5th tick (~100 ms at WRAP_DELAY=20) keeps CPU low.
+// The workspace contour (with its taskbar-boundary edges removed) is a
+// fallback for a cursor stuck on a work-area edge during window drags.
+// Checking every 5th tick (~100 ms at WRAP_DELAY=20) keeps CPU low.
 #define WORKSPACE_CHECK_INTERVAL 5
 
 void WrapMouseWhileDragging()
@@ -482,8 +510,9 @@ void WrapMouseWhileDragging()
     if (TryWrapAgainstContour(current_pos, g_desktop_contour, "Desktop"))
         return;
 
-    // Fallback: check workspace contour less frequently to handle
-    // cursor stuck at taskbar / work-area boundary during window drags.
+    // Fallback: check workspace contour less frequently to handle a cursor
+    // stuck on a work-area edge during window drags.  Edges along the taskbar
+    // were stripped in UpdateMonitorContours, so this never wraps across them.
     workspace_tick++;
     if (workspace_tick >= WORKSPACE_CHECK_INTERVAL) {
         workspace_tick = 0;

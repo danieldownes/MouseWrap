@@ -1,5 +1,11 @@
 # Version History
 
+## Unreleased:
+
+Changes:
+
+ - No wrapping at the taskbar boundary: the edge where the work area meets the taskbar is no longer treated as a wrap edge, so the cursor can rest against the taskbar without jumping to the opposite side.
+
 ## Version 4.1:
 
 Released: 2026

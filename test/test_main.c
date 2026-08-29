@@ -43,6 +43,10 @@ extern void test_near_edge_horizontal_within_tolerance(void);
 extern void test_near_edge_horizontal_outside_tolerance(void);
 extern void test_near_edge_horizontal_outside_range(void);
 extern void test_near_edge_zero_tolerance(void);
+extern void test_remove_taskbar_edge_bottom_taskbar(void);
+extern void test_remove_taskbar_edge_left_taskbar(void);
+extern void test_remove_taskbar_edge_no_taskbar_keeps_all(void);
+extern void test_remove_taskbar_edge_null_reference_removes_all(void);
 
 int main(void) {
     UNITY_BEGIN();
@@ -97,6 +101,10 @@ int main(void) {
     RUN_TEST(test_near_edge_horizontal_outside_tolerance);
     RUN_TEST(test_near_edge_horizontal_outside_range);
     RUN_TEST(test_near_edge_zero_tolerance);
+    RUN_TEST(test_remove_taskbar_edge_bottom_taskbar);
+    RUN_TEST(test_remove_taskbar_edge_left_taskbar);
+    RUN_TEST(test_remove_taskbar_edge_no_taskbar_keeps_all);
+    RUN_TEST(test_remove_taskbar_edge_null_reference_removes_all);
 
     return UNITY_END();
 }

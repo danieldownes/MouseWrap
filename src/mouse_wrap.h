@@ -35,6 +35,10 @@ void CleanupGlobalContourResources(void);
 // Test whether a point is within tolerance pixels of an edge segment
 BOOL IsPointNearEdge(POINT pt, me_Edge edge, int tolerance);
 
+// Remove edges from list that do not lie on any edge of reference.
+// Used to strip taskbar-boundary edges from the workspace contour.
+void RemoveEdgesNotOnContour(EdgeList* list, const EdgeList* reference);
+
 // Edge state management
 EdgeState GetEdgeState(me_Edge edge);
 void CycleEdgeState(me_Edge edge);
