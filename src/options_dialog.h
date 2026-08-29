@@ -3,7 +3,7 @@
 
 #include <windows.h>
 
-void InitDarkMode(void);
+// Modal Options dialog (monitor layout / edge states / delay / drag mode).
 void ShowOptionsDialog(HWND hwndParent);
 
 #endif // OPTIONS_DIALOG_H

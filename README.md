@@ -2,7 +2,7 @@ Mouse Wrap: Seamless Desktop Navigation
 
 **Wrap your mouse pointer around the edges of the screen**
 
-Mouse Wrap is a lightweight utility that eliminats screen boundaries. Instead of your mouse cursor getting trapped at screen edges, Mouse Wrap creates a seamless, wraparound experience where moving off one edge instantly transports your cursor to the opposite side, and even supports any multi-monitor setup.
+Mouse Wrap is a lightweight utility that eliminates screen boundaries. Instead of your mouse cursor getting trapped at screen edges, Mouse Wrap creates a seamless, wraparound experience where moving off one edge instantly transports your cursor to the opposite side, and even supports any multi-monitor setup.
 
 ## Key Benefits
 
@@ -25,7 +25,7 @@ Mouse Wrap has been trusted by users worldwide for **25 years**, continuously re
 
 ## System Requirements
 
-- Windows operating system
+- Windows 10 or later
 - Minimal system resources (runs efficiently in the background)
 - Compatible with all screen resolutions and multi-monitor configurations
 
@@ -44,7 +44,7 @@ Mouse Wrap has been trusted by users worldwide for **25 years**, continuously re
  - Multi-monitor aware mouse-wrapping
  - Theme aware traybar icon
  - No install 
- - Portable (depending on vc_redist)
+ - Portable: a single exe with no runtime dependencies
  - Tiny download
 
 

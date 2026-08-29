@@ -1,343 +1,688 @@
 #include "options_dialog.h"
 #include "resource.h"
 #include "mouse_wrap.h"
+#include "darkmode.h"
 #include "multimonitor_edges.h"
 #include "multimonitor_contour.h"
 #include <windowsx.h>
 #include <commctrl.h>
 #include <uxtheme.h>
+#include <dwmapi.h>
+#include <gdiplus.h>
+#include <string.h>
 
-// Forward-declare IsDarkTheme from taskbar.c
-BOOL IsDarkTheme(void);
+// ---------------------------------------------------------------------------
+// Theme palette (ARGB for GDI+, converted to COLORREF where GDI needs it)
+// ---------------------------------------------------------------------------
 
-// --- Dark mode via uxtheme.dll undocumented ordinals ---
+typedef struct {
+    ARGB bg;          // dialog background
+    ARGB card;        // preview card fill
+    ARGB cardBorder;  // preview card 1px border
+    ARGB text;        // primary text
+    ARGB subtle;      // secondary text
+    ARGB monTop;      // monitor gradient top
+    ARGB monBottom;   // monitor gradient bottom
+    ARGB monBorder;   // monitor outline
+    ARGB edgeWrap;    // green
+    ARGB edgeDelayed; // yellow
+    ARGB edgeNoWrap;  // red
+    ARGB cursorDot;
+    ARGB cursorRing;
+    ARGB track;       // slider channel (unfilled)
+    ARGB thumbRing;   // slider thumb outer ring
+} Theme;
 
-typedef BOOL (WINAPI *AllowDarkModeForWindowFunc)(HWND, BOOL);
-typedef BOOL (WINAPI *SetPreferredAppModeFunc)(int);
-typedef void (WINAPI *RefreshImmersiveColorPolicyStateFunc)(void);
+static const Theme THEME_LIGHT = {
+    0xFFF3F3F3, 0xFFFFFFFF, 0xFFE0E0E0, 0xFF1B1B1B, 0xFF6B6B6B,
+    0xFF5A8FD6, 0xFF3C6DB4, 0xFF2E5A9C,
+    0xFF1DA84A, 0xFFE0B000, 0xFFD62828,
+    0xFFFF3C3C, 0xFFFFFFFF,
+    0xFF8A8A8A, 0xFFFFFFFF
+};
 
-static AllowDarkModeForWindowFunc pAllowDarkModeForWindow = NULL;
-static SetPreferredAppModeFunc pSetPreferredAppMode = NULL;
-static RefreshImmersiveColorPolicyStateFunc pRefreshImmersiveColorPolicyState = NULL;
+static const Theme THEME_DARK = {
+    0xFF202020, 0xFF2B2B2B, 0xFF3A3A3A, 0xFFFFFFFF, 0xFFA0A0A0,
+    0xFF4B7FC4, 0xFF2F5A94, 0xFF1F4070,
+    0xFF2ECC71, 0xFFF0C830, 0xFFE05050,
+    0xFFFFFFFF, 0xFF202020,
+    0xFF9A9A9A, 0xFF454545
+};
 
-void InitDarkMode(void)
-{
-    HMODULE hUxTheme = LoadLibraryW(L"uxtheme.dll");
-    if (!hUxTheme) return;
-
-    pSetPreferredAppMode = (SetPreferredAppModeFunc)GetProcAddress(hUxTheme, MAKEINTRESOURCEA(135));
-    pAllowDarkModeForWindow = (AllowDarkModeForWindowFunc)GetProcAddress(hUxTheme, MAKEINTRESOURCEA(133));
-    pRefreshImmersiveColorPolicyState = (RefreshImmersiveColorPolicyStateFunc)GetProcAddress(hUxTheme, MAKEINTRESOURCEA(104));
-
-    if (pSetPreferredAppMode)
-        pSetPreferredAppMode(1); // AllowDark
-    if (pRefreshImmersiveColorPolicyState)
-        pRefreshImmersiveColorPolicyState();
+static COLORREF ToColorRef(ARGB c) {
+    return RGB((c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF);
 }
 
-// --- Color scheme ---
+static ARGB WithAlpha(ARGB c, BYTE a) {
+    return (c & 0x00FFFFFF) | ((ARGB)a << 24);
+}
 
-#define CLR_DARK_BG         RGB(32, 32, 32)
-#define CLR_DARK_PREVIEW_BG RGB(30, 30, 30)
-#define CLR_DARK_MON_FILL   RGB(56, 100, 170)
-#define CLR_DARK_MON_BORDER RGB(40, 80, 140)
+#ifndef DWMWA_SYSTEMBACKDROP_TYPE
+#define DWMWA_SYSTEMBACKDROP_TYPE 38
+#endif
+#ifndef DWMSBT_MAINWINDOW
+#define DWMSBT_MAINWINDOW 2
+#endif
 
-#define CLR_LIGHT_PREVIEW_BG RGB(240, 240, 240)
-#define CLR_LIGHT_MON_FILL   RGB(76, 128, 200)
-#define CLR_LIGHT_MON_BORDER RGB(0, 90, 158)
+// ---------------------------------------------------------------------------
+// Dialog state
+// ---------------------------------------------------------------------------
 
-// Edge colors — three states
-#define CLR_EDGE_ENABLED_LIGHT  RGB(0, 180, 0)
-#define CLR_EDGE_ENABLED_DARK   RGB(0, 200, 80)
-#define CLR_EDGE_DELAYED_LIGHT  RGB(220, 180, 0)
-#define CLR_EDGE_DELAYED_DARK   RGB(240, 200, 40)
-#define CLR_EDGE_DISABLED_LIGHT RGB(200, 0, 0)
-#define CLR_EDGE_DISABLED_DARK  RGB(220, 50, 50)
-
-// --- Dialog state ---
-
-#define IDT_CURSOR_TRACK  50   // timer ID for live cursor dot
+#define IDT_CURSOR_TRACK  50   // timer ID for live cursor dot + hover tracking
 #define CURSOR_TRACK_MS   50   // refresh interval (ms)
 
 #define MAX_PREVIEW_MONITORS 16
 #define MAX_CONTOUR_EDGES    128
 
 typedef struct {
-    me_Rect  rects[MAX_PREVIEW_MONITORS];
-    SIZE_T   count;
+    me_Rect    rects[MAX_PREVIEW_MONITORS];
+    SIZE_T     count;
     me_Edge    contourEdges[MAX_CONTOUR_EDGES];
     EdgeState  edgeState[MAX_CONTOUR_EDGES];
     SIZE_T     contourCount;
-    BOOL     dark;
-    HBRUSH   hBrushBg;
-    HWND     hTip;
-    // Cached transform for hit testing (set during draw)
-    double   scale;
-    int      offX, offY;
-    int      bbLeft, bbTop;
+
+    BOOL       dark;
+    const Theme* theme;
+    ARGB       accent;          // system accent colour (slider)
+    HBRUSH     hBrushBg;
+    HWND       hTip;
+    HFONT      hFontUi;         // system message font at current DPI
+    HFONT      hFontLabel;      // slightly larger semibold, monitor numbers
+    UINT       dpi;
+    int        hoverIdx;        // contour edge under the cursor, or -1
+
+    // Cached preview transform for hit testing (set during draw)
+    double     scale;
+    int        offX, offY;
+    int        bbLeft, bbTop;
 } OptionsDlgData;
 
-static void DrawMonitorPreview(OptionsDlgData* data, const DRAWITEMSTRUCT* dis)
+static int Px(const OptionsDlgData* d, int at96) { return MulDiv(at96, (int)d->dpi, 96); }
+
+// ---------------------------------------------------------------------------
+// Fonts / theme helpers
+// ---------------------------------------------------------------------------
+
+static HFONT CreateUiFont(UINT dpi, int weight, int percent)
 {
-    HDC hdc = dis->hDC;
-    RECT rc = dis->rcItem;
+    NONCLIENTMETRICSW ncm;
+    ncm.cbSize = sizeof(ncm);
+    LOGFONTW lf;
+    if (SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0, dpi)) {
+        lf = ncm.lfMessageFont;
+    } else {
+        memset(&lf, 0, sizeof(lf));
+        lstrcpyW(lf.lfFaceName, L"Segoe UI");
+        lf.lfHeight = -MulDiv(9, (int)dpi, 72);
+    }
+    lf.lfWeight = weight;
+    lf.lfHeight = MulDiv(lf.lfHeight, percent, 100);
+    lf.lfQuality = CLEARTYPE_QUALITY;
+    return CreateFontIndirectW(&lf);
+}
 
-    // Preview background
-    COLORREF bgColor = data->dark ? CLR_DARK_PREVIEW_BG : CLR_LIGHT_PREVIEW_BG;
-    HBRUSH hBgBrush = CreateSolidBrush(bgColor);
-    FillRect(hdc, &rc, hBgBrush);
-    DeleteObject(hBgBrush);
+static ARGB QueryAccentColor(void)
+{
+    DWORD argb = 0; BOOL opaque = FALSE;
+    if (SUCCEEDED(DwmGetColorizationColor(&argb, &opaque)) && (argb & 0x00FFFFFF) != 0)
+        return 0xFF000000 | (argb & 0x00FFFFFF);
+    return 0xFF0078D4; // Windows default blue
+}
 
-    if (data->count == 0) return;
+static BOOL CALLBACK SetFontProc(HWND hChild, LPARAM lParam)
+{
+    SendMessageW(hChild, WM_SETFONT, (WPARAM)lParam, TRUE);
+    return TRUE;
+}
 
-    // Compute bounding box of all monitors
-    int bbLeft   = data->rects[0].xMin;
-    int bbTop    = data->rects[0].yMin;
-    int bbRight  = data->rects[0].xMax;
-    int bbBottom = data->rects[0].yMax;
+static BOOL CALLBACK ThemeChildProc(HWND hChild, LPARAM lParam)
+{
+    DarkMode_ApplyToControl(hChild, (BOOL)lParam);
+    return TRUE;
+}
+
+static void RebuildFonts(HWND hDlg, OptionsDlgData* data)
+{
+    if (data->hFontUi)    DeleteObject(data->hFontUi);
+    if (data->hFontLabel) DeleteObject(data->hFontLabel);
+    data->hFontUi    = CreateUiFont(data->dpi, FW_NORMAL, 100);
+    data->hFontLabel = CreateUiFont(data->dpi, FW_SEMIBOLD, 115);
+    EnumChildWindows(hDlg, SetFontProc, (LPARAM)data->hFontUi);
+
+    // Owner-drawn combobox: item heights must be set by hand, from the font.
+    HDC hdc = GetDC(hDlg);
+    HFONT hOld = SelectObject(hdc, data->hFontUi);
+    TEXTMETRICW tm;
+    GetTextMetricsW(hdc, &tm);
+    SelectObject(hdc, hOld);
+    ReleaseDC(hDlg, hdc);
+    HWND hCombo = GetDlgItem(hDlg, IDC_DRAG_MODE_COMBO);
+    SendMessageW(hCombo, CB_SETITEMHEIGHT, (WPARAM)-1, tm.tmHeight + Px(data, 10)); // selection field
+    SendMessageW(hCombo, CB_SETITEMHEIGHT, 0,          tm.tmHeight + Px(data, 8));  // list items
+}
+
+static void ApplyTheme(HWND hDlg, OptionsDlgData* data)
+{
+    data->dark   = DarkMode_IsEnabled();
+    data->theme  = data->dark ? &THEME_DARK : &THEME_LIGHT;
+    data->accent = QueryAccentColor();
+
+    if (data->hBrushBg) DeleteObject(data->hBrushBg);
+    data->hBrushBg = CreateSolidBrush(ToColorRef(data->theme->bg));
+
+    DarkMode_ApplyToWindow(hDlg, data->dark);
+    EnumChildWindows(hDlg, ThemeChildProc, (LPARAM)data->dark);
+    if (data->hTip) DarkMode_ApplyToControl(data->hTip, data->dark);
+
+    RedrawWindow(hDlg, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_FRAME);
+}
+
+// ---------------------------------------------------------------------------
+// Preview geometry (shared by drawing and hit testing)
+// ---------------------------------------------------------------------------
+
+static BOOL ComputeTransform(OptionsDlgData* data, const RECT* rc)
+{
+    if (data->count == 0) return FALSE;
+
+    int bbLeft = data->rects[0].xMin, bbTop = data->rects[0].yMin;
+    int bbRight = data->rects[0].xMax, bbBottom = data->rects[0].yMax;
     for (SIZE_T i = 1; i < data->count; i++) {
         if (data->rects[i].xMin < bbLeft)   bbLeft   = data->rects[i].xMin;
         if (data->rects[i].yMin < bbTop)    bbTop    = data->rects[i].yMin;
         if (data->rects[i].xMax > bbRight)  bbRight  = data->rects[i].xMax;
         if (data->rects[i].yMax > bbBottom) bbBottom = data->rects[i].yMax;
     }
+    int bbW = bbRight - bbLeft, bbH = bbBottom - bbTop;
+    if (bbW <= 0 || bbH <= 0) return FALSE;
 
-    int bbW = bbRight - bbLeft;
-    int bbH = bbBottom - bbTop;
-    if (bbW <= 0 || bbH <= 0) return;
+    int padding = Px(data, 16);
+    int ctrlW = (rc->right - rc->left) - padding * 2;
+    int ctrlH = (rc->bottom - rc->top) - padding * 2;
+    if (ctrlW <= 0 || ctrlH <= 0) return FALSE;
 
-    int padding = 8;
-    int ctrlW = (rc.right - rc.left) - padding * 2;
-    int ctrlH = (rc.bottom - rc.top) - padding * 2;
-    if (ctrlW <= 0 || ctrlH <= 0) return;
-
-    // Uniform scale preserving aspect ratio
-    double scaleX = (double)ctrlW / bbW;
-    double scaleY = (double)ctrlH / bbH;
+    double scaleX = (double)ctrlW / bbW, scaleY = (double)ctrlH / bbH;
     double scale = (scaleX < scaleY) ? scaleX : scaleY;
+    int scaledW = (int)(bbW * scale), scaledH = (int)(bbH * scale);
 
-    // Center the layout
-    int scaledW = (int)(bbW * scale);
-    int scaledH = (int)(bbH * scale);
-    int offX = rc.left + padding + (ctrlW - scaledW) / 2;
-    int offY = rc.top  + padding + (ctrlH - scaledH) / 2;
-
-    // Cache transform for hit testing
     data->scale  = scale;
-    data->offX   = offX;
-    data->offY   = offY;
+    data->offX   = rc->left + padding + (ctrlW - scaledW) / 2;
+    data->offY   = rc->top  + padding + (ctrlH - scaledH) / 2;
     data->bbLeft = bbLeft;
     data->bbTop  = bbTop;
+    return TRUE;
+}
 
-    // Monitor colors
-    COLORREF fillColor   = data->dark ? CLR_DARK_MON_FILL   : CLR_LIGHT_MON_FILL;
-    COLORREF borderColor = data->dark ? CLR_DARK_MON_BORDER : CLR_LIGHT_MON_BORDER;
+static int MapX(const OptionsDlgData* d, int x) { return d->offX + (int)((x - d->bbLeft) * d->scale); }
+static int MapY(const OptionsDlgData* d, int y) { return d->offY + (int)((y - d->bbTop)  * d->scale); }
 
-    HBRUSH hFillBrush = CreateSolidBrush(fillColor);
-    HPEN   hBorderPen = CreatePen(PS_SOLID, 2, borderColor);
-    HBRUSH hOldBrush = SelectObject(hdc, hFillBrush);
-    HPEN   hOldPen   = SelectObject(hdc, hBorderPen);
-
-    // Font for monitor labels
-    HFONT hFont = CreateFontW(-14, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
-                              DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                              CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI");
-    HFONT hOldFont = SelectObject(hdc, hFont);
-    SetTextColor(hdc, RGB(255, 255, 255));
-    SetBkMode(hdc, TRANSPARENT);
-
-    int gap = 2;
-
-    for (SIZE_T i = 0; i < data->count; i++) {
-        int left   = offX + (int)((data->rects[i].xMin - bbLeft) * scale) + gap;
-        int top    = offY + (int)((data->rects[i].yMin - bbTop)  * scale) + gap;
-        int right  = offX + (int)((data->rects[i].xMax - bbLeft) * scale) - gap;
-        int bottom = offY + (int)((data->rects[i].yMax - bbTop)  * scale) - gap;
-
-        RoundRect(hdc, left, top, right, bottom, 6, 6);
-
-        // Draw monitor number centered
-        WCHAR label[4];
-        wsprintfW(label, L"%d", (int)(i + 1));
-        RECT labelRc = { left, top, right, bottom };
-        DrawTextW(hdc, label, -1, &labelRc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-    }
-
-    SelectObject(hdc, hOldFont);
-    DeleteObject(hFont);
-    SelectObject(hdc, hOldPen);
-    SelectObject(hdc, hOldBrush);
-    DeleteObject(hBorderPen);
-    DeleteObject(hFillBrush);
-
-    // Draw contour edges as colored lines over the monitors
-    COLORREF enabledColor  = data->dark ? CLR_EDGE_ENABLED_DARK  : CLR_EDGE_ENABLED_LIGHT;
-    COLORREF delayedColor  = data->dark ? CLR_EDGE_DELAYED_DARK  : CLR_EDGE_DELAYED_LIGHT;
-    COLORREF disabledColor = data->dark ? CLR_EDGE_DISABLED_DARK : CLR_EDGE_DISABLED_LIGHT;
-
-    for (SIZE_T i = 0; i < data->contourCount; i++) {
-        me_Edge e = data->contourEdges[i];
-        COLORREF clr = enabledColor;
-        if (data->edgeState[i] == EDGE_DELAYED) clr = delayedColor;
-        else if (data->edgeState[i] == EDGE_NOWRAP) clr = disabledColor;
-        HPEN hEdgePen = CreatePen(PS_SOLID, 3, clr);
-        HPEN hPrevPen = SelectObject(hdc, hEdgePen);
-
-        int ex1 = offX + (int)((e.x1 - bbLeft) * scale);
-        int ey1 = offY + (int)((e.y1 - bbTop)  * scale);
-        int ex2 = offX + (int)((e.x2 - bbLeft) * scale);
-        int ey2 = offY + (int)((e.y2 - bbTop)  * scale);
-
-        MoveToEx(hdc, ex1, ey1, NULL);
-        LineTo(hdc, ex2, ey2);
-
-        SelectObject(hdc, hPrevPen);
-        DeleteObject(hEdgePen);
-    }
-
-    // Draw live cursor position as a dot
-    {
-        POINT cursorPos;
-        GetCursorPos(&cursorPos);
-        int cx = offX + (int)((cursorPos.x - bbLeft) * scale);
-        int cy = offY + (int)((cursorPos.y - bbTop)  * scale);
-        int r = 4;
-        COLORREF dotColor = data->dark ? RGB(255, 255, 255) : RGB(255, 60, 60);
-        HBRUSH hDotBrush = CreateSolidBrush(dotColor);
-        HPEN hDotPen = CreatePen(PS_SOLID, 1, dotColor);
-        HBRUSH hPrevBrush = SelectObject(hdc, hDotBrush);
-        HPEN hPrevPen2 = SelectObject(hdc, hDotPen);
-        Ellipse(hdc, cx - r, cy - r, cx + r, cy + r);
-        SelectObject(hdc, hPrevPen2);
-        SelectObject(hdc, hPrevBrush);
-        DeleteObject(hDotPen);
-        DeleteObject(hDotBrush);
+// Distance in pixels from pt (preview client coords) to contour edge idx,
+// or INT_MAX when pt is not beside the edge's span.
+static int EdgeDistancePx(const OptionsDlgData* data, SIZE_T idx, POINT pt)
+{
+    me_Edge e = data->contourEdges[idx];
+    int ex1 = MapX(data, e.x1), ey1 = MapY(data, e.y1);
+    int ex2 = MapX(data, e.x2), ey2 = MapY(data, e.y2);
+    int slack = Px(data, 3);
+    if (ex1 == ex2) {
+        int lo = min(ey1, ey2) - slack, hi = max(ey1, ey2) + slack;
+        return (pt.y >= lo && pt.y <= hi) ? abs(pt.x - ex1) : INT_MAX;
+    } else {
+        int lo = min(ex1, ex2) - slack, hi = max(ex1, ex2) + slack;
+        return (pt.x >= lo && pt.x <= hi) ? abs(pt.y - ey1) : INT_MAX;
     }
 }
+
+// Index of the contour edge within the hit threshold of pt, or -1.
+static int HitTestEdge(const OptionsDlgData* data, POINT pt)
+{
+    if (data->contourCount == 0 || data->scale <= 0.0) return -1;
+    int bestIdx = -1, bestDist = Px(data, 7);
+    for (SIZE_T i = 0; i < data->contourCount; i++) {
+        int d = EdgeDistancePx(data, i, pt);
+        if (d < bestDist) { bestDist = d; bestIdx = (int)i; }
+    }
+    return bestIdx;
+}
+
+static ARGB EdgeColor(const Theme* t, EdgeState s)
+{
+    return s == EDGE_DELAYED ? t->edgeDelayed : s == EDGE_NOWRAP ? t->edgeNoWrap : t->edgeWrap;
+}
+
+// ---------------------------------------------------------------------------
+// GDI+ drawing helpers
+// ---------------------------------------------------------------------------
+
+static GpPath* RoundRectPath(REAL x, REAL y, REAL w, REAL h, REAL r)
+{
+    GpPath* path = NULL;
+    if (GdipCreatePath(FillModeAlternate, &path) != Ok) return NULL;
+    REAL d = r * 2;
+    if (d > w) d = w;
+    if (d > h) d = h;
+    GdipAddPathArc(path, x,         y,         d, d, 180, 90);
+    GdipAddPathArc(path, x + w - d, y,         d, d, 270, 90);
+    GdipAddPathArc(path, x + w - d, y + h - d, d, d,   0, 90);
+    GdipAddPathArc(path, x,         y + h - d, d, d,  90, 90);
+    GdipClosePathFigure(path);
+    return path;
+}
+
+static void DrawRoundedLine(GpGraphics* g, ARGB color, REAL width, int x1, int y1, int x2, int y2)
+{
+    GpPen* pen = NULL;
+    if (GdipCreatePen1(color, width, UnitPixel, &pen) != Ok) return;
+    GdipSetPenStartCap(pen, LineCapRound);
+    GdipSetPenEndCap(pen, LineCapRound);
+    GdipDrawLine(g, pen, (REAL)x1, (REAL)y1, (REAL)x2, (REAL)y2);
+    GdipDeletePen(pen);
+}
+
+static GpGraphics* BeginGdipDraw(HDC hdc)
+{
+    GpGraphics* g = NULL;
+    if (GdipCreateFromHDC(hdc, &g) != Ok) return NULL;
+    GdipSetSmoothingMode(g, SmoothingModeAntiAlias);
+    GdipSetPixelOffsetMode(g, PixelOffsetModeHalf);
+    GdipSetTextRenderingHint(g, TextRenderingHintAntiAliasGridFit);
+    return g;
+}
+
+// ---------------------------------------------------------------------------
+// Monitor preview
+// ---------------------------------------------------------------------------
+
+static void DrawMonitorPreview(OptionsDlgData* data, const DRAWITEMSTRUCT* dis)
+{
+    const Theme* t = data->theme;
+    RECT rc = dis->rcItem;
+    int w = rc.right - rc.left, h = rc.bottom - rc.top;
+    if (w <= 0 || h <= 0) return;
+
+    // Double buffer: everything is drawn into a memory bitmap and blitted once.
+    HDC hdcMem = CreateCompatibleDC(dis->hDC);
+    HBITMAP hBmp = CreateCompatibleBitmap(dis->hDC, w, h);
+    HBITMAP hOldBmp = SelectObject(hdcMem, hBmp);
+    RECT local = { 0, 0, w, h };
+
+    HBRUSH hBg = CreateSolidBrush(ToColorRef(t->bg));
+    FillRect(hdcMem, &local, hBg);
+    DeleteObject(hBg);
+
+    GpGraphics* g = BeginGdipDraw(hdcMem);
+    if (g) {
+        // Card
+        REAL radius = (REAL)Px(data, 8);
+        GpPath* card = RoundRectPath(0.5f, 0.5f, (REAL)w - 1, (REAL)h - 1, radius);
+        if (card) {
+            GpSolidFill* fill = NULL; GpPen* border = NULL;
+            GdipCreateSolidFill(t->card, &fill);
+            GdipCreatePen1(t->cardBorder, 1.0f, UnitPixel, &border);
+            GdipFillPath(g, (GpBrush*)fill, card);
+            GdipDrawPath(g, border, card);
+            GdipDeleteBrush((GpBrush*)fill);
+            GdipDeletePen(border);
+            GdipDeletePath(card);
+        }
+
+        if (ComputeTransform(data, &local)) {
+            // Monitors
+            GpFont* font = NULL;
+            GpStringFormat* fmt = NULL;
+            GpSolidFill* textBrush = NULL;
+            {
+                LOGFONTW lf;
+                GetObjectW(data->hFontLabel, sizeof(lf), &lf);
+                GdipCreateFontFromLogfontW(hdcMem, &lf, &font);
+                GdipCreateStringFormat(0, LANG_NEUTRAL, &fmt);
+                GdipSetStringFormatAlign(fmt, StringAlignmentCenter);
+                GdipSetStringFormatLineAlign(fmt, StringAlignmentCenter);
+                GdipCreateSolidFill(0xFFFFFFFF, &textBrush);
+            }
+            int gap = Px(data, 2);
+            REAL monRadius = (REAL)Px(data, 6);
+            GpPen* monPen = NULL;
+            GdipCreatePen1(t->monBorder, (REAL)Px(data, 2), UnitPixel, &monPen);
+
+            for (SIZE_T i = 0; i < data->count; i++) {
+                int left   = MapX(data, data->rects[i].xMin) + gap;
+                int top    = MapY(data, data->rects[i].yMin) + gap;
+                int right  = MapX(data, data->rects[i].xMax) - gap;
+                int bottom = MapY(data, data->rects[i].yMax) - gap;
+                GpRectF r = { (REAL)left, (REAL)top, (REAL)(right - left), (REAL)(bottom - top) };
+                if (r.Width <= 0 || r.Height <= 0) continue;
+
+                GpPath* mon = RoundRectPath(r.X, r.Y, r.Width, r.Height, monRadius);
+                GpLineGradient* grad = NULL;
+                GdipCreateLineBrushFromRect(&r, t->monTop, t->monBottom, LinearGradientModeVertical, WrapModeTileFlipXY, &grad);
+                if (mon) {
+                    if (grad) GdipFillPath(g, (GpBrush*)grad, mon);
+                    if (monPen) GdipDrawPath(g, monPen, mon);
+                    GdipDeletePath(mon);
+                }
+                if (grad) GdipDeleteBrush((GpBrush*)grad);
+
+                WCHAR label[4];
+                wsprintfW(label, L"%d", (int)(i + 1));
+                if (font && fmt && textBrush)
+                    GdipDrawString(g, label, -1, font, &r, fmt, (GpBrush*)textBrush);
+            }
+            if (monPen) GdipDeletePen(monPen);
+            if (textBrush) GdipDeleteBrush((GpBrush*)textBrush);
+            if (fmt) GdipDeleteStringFormat(fmt);
+            if (font) GdipDeleteFont(font);
+
+            // Contour edges (hovered edge gets a soft glow underneath)
+            REAL edgeW = (REAL)Px(data, 3);
+            for (SIZE_T i = 0; i < data->contourCount; i++) {
+                me_Edge e = data->contourEdges[i];
+                ARGB c = EdgeColor(t, data->edgeState[i]);
+                int x1 = MapX(data, e.x1), y1 = MapY(data, e.y1);
+                int x2 = MapX(data, e.x2), y2 = MapY(data, e.y2);
+                if ((int)i == data->hoverIdx)
+                    DrawRoundedLine(g, WithAlpha(c, 0x60), edgeW * 3.0f, x1, y1, x2, y2);
+                DrawRoundedLine(g, c, edgeW, x1, y1, x2, y2);
+            }
+
+            // Live cursor dot with a contrasting ring
+            POINT cur;
+            GetCursorPos(&cur);
+            REAL r = (REAL)Px(data, 4);
+            REAL cx = (REAL)MapX(data, cur.x), cy = (REAL)MapY(data, cur.y);
+            GpSolidFill* dot = NULL; GpPen* ring = NULL;
+            GdipCreateSolidFill(t->cursorDot, &dot);
+            GdipCreatePen1(t->cursorRing, 1.0f, UnitPixel, &ring);
+            if (dot)  GdipFillEllipse(g, (GpBrush*)dot, cx - r, cy - r, r * 2, r * 2);
+            if (ring) GdipDrawEllipse(g, ring, cx - r, cy - r, r * 2, r * 2);
+            if (dot)  GdipDeleteBrush((GpBrush*)dot);
+            if (ring) GdipDeletePen(ring);
+        }
+        GdipDeleteGraphics(g);
+    }
+
+    BitBlt(dis->hDC, rc.left, rc.top, w, h, hdcMem, 0, 0, SRCCOPY);
+    SelectObject(hdcMem, hOldBmp);
+    DeleteObject(hBmp);
+    DeleteDC(hdcMem);
+}
+
+// ---------------------------------------------------------------------------
+// Legend
+// ---------------------------------------------------------------------------
 
 static void DrawEdgeLegend(OptionsDlgData* data, const DRAWITEMSTRUCT* dis)
 {
+    const Theme* t = data->theme;
     HDC hdc = dis->hDC;
     RECT rc = dis->rcItem;
 
-    // Fill background
-    HBRUSH hBg = CreateSolidBrush(data->dark ? CLR_DARK_BG : GetSysColor(COLOR_BTNFACE));
-    FillRect(hdc, &rc, hBg);
-    DeleteObject(hBg);
+    FillRect(hdc, &rc, data->hBrushBg);
 
-    HFONT hFont = CreateFontW(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                              DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                              CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI");
-    HFONT hOldFont = SelectObject(hdc, hFont);
+    HFONT hOldFont = SelectObject(hdc, data->hFontUi);
     SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, data->dark ? RGB(200, 200, 200) : RGB(60, 60, 60));
+    SetTextColor(hdc, ToColorRef(t->subtle));
 
-    struct { COLORREF clr; const WCHAR* label; } items[] = {
-        { data->dark ? CLR_EDGE_ENABLED_DARK  : CLR_EDGE_ENABLED_LIGHT,  L"Wrap" },
-        { data->dark ? CLR_EDGE_DELAYED_DARK  : CLR_EDGE_DELAYED_LIGHT,  L"Delayed" },
-        { data->dark ? CLR_EDGE_DISABLED_DARK : CLR_EDGE_DISABLED_LIGHT, L"No Wrap" },
+    struct { ARGB clr; const WCHAR* label; } items[] = {
+        { t->edgeWrap,    L"Wrap" },
+        { t->edgeDelayed, L"Delayed" },
+        { t->edgeNoWrap,  L"No Wrap" },
     };
 
-    int x = rc.left + 4;
+    GpGraphics* g = BeginGdipDraw(hdc);
+    int x = rc.left + Px(data, 2);
     int cy = (rc.top + rc.bottom) / 2;
-    int lineLen = 20;
-    int gap = 6;
+    int lineLen = Px(data, 18), gap = Px(data, 6);
+    REAL lineW = (REAL)Px(data, 3);
 
     for (int i = 0; i < 3; i++) {
-        HPEN hPen = CreatePen(PS_SOLID, 3, items[i].clr);
-        HPEN hOldPen = SelectObject(hdc, hPen);
-        MoveToEx(hdc, x, cy, NULL);
-        LineTo(hdc, x + lineLen, cy);
-        SelectObject(hdc, hOldPen);
-        DeleteObject(hPen);
+        if (g) DrawRoundedLine(g, items[i].clr, lineW, x, cy, x + lineLen, cy);
         x += lineLen + gap;
-
         SIZE sz;
-        GetTextExtentPoint32W(hdc, items[i].label, (int)wcslen(items[i].label), &sz);
-        TextOutW(hdc, x, cy - sz.cy / 2, items[i].label, (int)wcslen(items[i].label));
+        int len = (int)wcslen(items[i].label);
+        GetTextExtentPoint32W(hdc, items[i].label, len, &sz);
+        TextOutW(hdc, x, cy - sz.cy / 2, items[i].label, len);
         x += sz.cx + gap * 2;
     }
-
+    if (g) GdipDeleteGraphics(g);
     SelectObject(hdc, hOldFont);
-    DeleteObject(hFont);
 }
+
+// ---------------------------------------------------------------------------
+// Combobox (owner-drawn so the read-only face follows the palette; the
+// themed border/button come from DarkMode_CFD / CFD)
+// ---------------------------------------------------------------------------
+
+static void DrawComboItem(OptionsDlgData* data, const DRAWITEMSTRUCT* dis)
+{
+    const Theme* t = data->theme;
+    BOOL isField  = (dis->itemState & ODS_COMBOBOXEDIT) != 0;
+    BOOL selected = (dis->itemState & ODS_SELECTED) != 0;
+
+    ARGB bg   = isField ? t->card : (selected ? data->accent : t->bg);
+    ARGB text = (!isField && selected) ? 0xFFFFFFFF : t->text;
+
+    HBRUSH hBg = CreateSolidBrush(ToColorRef(bg));
+    FillRect(dis->hDC, &dis->rcItem, hBg);
+    DeleteObject(hBg);
+
+    if (dis->itemID != (UINT)-1) {
+        WCHAR buf[64] = L"";
+        SendMessageW(dis->hwndItem, CB_GETLBTEXT, dis->itemID, (LPARAM)buf);
+        HFONT hOld = SelectObject(dis->hDC, data->hFontUi);
+        SetBkMode(dis->hDC, TRANSPARENT);
+        SetTextColor(dis->hDC, ToColorRef(text));
+        RECT rc = dis->rcItem;
+        rc.left += Px(data, 8);
+        DrawTextW(dis->hDC, buf, -1, &rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        SelectObject(dis->hDC, hOld);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Slider custom draw (Windows 11 style: thin rounded channel, round thumb)
+// ---------------------------------------------------------------------------
+
+static LRESULT SliderCustomDraw(OptionsDlgData* data, NMCUSTOMDRAW* cd)
+{
+    const Theme* t = data->theme;
+    if (cd->dwDrawStage == CDDS_PREPAINT)
+        return CDRF_NOTIFYITEMDRAW;
+    if (cd->dwDrawStage != CDDS_ITEMPREPAINT)
+        return CDRF_DODEFAULT;
+
+    if (cd->dwItemSpec == TBCD_TICS)
+        return CDRF_SKIPDEFAULT; // no tick marks
+
+    GpGraphics* g = BeginGdipDraw(cd->hdc);
+    if (!g) return CDRF_DODEFAULT;
+
+    if (cd->dwItemSpec == TBCD_CHANNEL) {
+        RECT thumb;
+        SendMessageW(cd->hdr.hwndFrom, TBM_GETTHUMBRECT, 0, (LPARAM)&thumb);
+        int thumbCx = (thumb.left + thumb.right) / 2;
+        int chH = Px(data, 4);
+        int cy = (cd->rc.top + cd->rc.bottom) / 2;
+        REAL y = (REAL)(cy - chH / 2), hgt = (REAL)chH;
+        GpPath* full = RoundRectPath((REAL)cd->rc.left, y, (REAL)(cd->rc.right - cd->rc.left), hgt, hgt / 2);
+        GpPath* done = RoundRectPath((REAL)cd->rc.left, y, (REAL)max(thumbCx - cd->rc.left, chH), hgt, hgt / 2);
+        GpSolidFill* bTrack = NULL; GpSolidFill* bDone = NULL;
+        GdipCreateSolidFill(t->track, &bTrack);
+        GdipCreateSolidFill(data->accent, &bDone);
+        if (full && bTrack) GdipFillPath(g, (GpBrush*)bTrack, full);
+        if (done && bDone)  GdipFillPath(g, (GpBrush*)bDone, done);
+        if (bTrack) GdipDeleteBrush((GpBrush*)bTrack);
+        if (bDone)  GdipDeleteBrush((GpBrush*)bDone);
+        if (full) GdipDeletePath(full);
+        if (done) GdipDeletePath(done);
+    } else if (cd->dwItemSpec == TBCD_THUMB) {
+        // Erase the default thumb area with the dialog background, then draw a
+        // ring + accent dot.
+        FillRect(cd->hdc, &cd->rc, data->hBrushBg);
+        int size = min(cd->rc.right - cd->rc.left, cd->rc.bottom - cd->rc.top);
+        REAL cx = (REAL)((cd->rc.left + cd->rc.right) / 2);
+        REAL cy = (REAL)((cd->rc.top + cd->rc.bottom) / 2);
+        REAL rOuter = (REAL)size / 2 - 1, rInner = rOuter * 0.55f;
+        GpSolidFill* bRing = NULL; GpSolidFill* bDot = NULL; GpPen* pBorder = NULL;
+        GdipCreateSolidFill(t->thumbRing, &bRing);
+        GdipCreateSolidFill(data->accent, &bDot);
+        GdipCreatePen1(t->cardBorder, 1.0f, UnitPixel, &pBorder);
+        if (bRing) GdipFillEllipse(g, (GpBrush*)bRing, cx - rOuter, cy - rOuter, rOuter * 2, rOuter * 2);
+        if (pBorder) GdipDrawEllipse(g, pBorder, cx - rOuter, cy - rOuter, rOuter * 2, rOuter * 2);
+        if (bDot)  GdipFillEllipse(g, (GpBrush*)bDot, cx - rInner, cy - rInner, rInner * 2, rInner * 2);
+        if (bRing) GdipDeleteBrush((GpBrush*)bRing);
+        if (bDot)  GdipDeleteBrush((GpBrush*)bDot);
+        if (pBorder) GdipDeletePen(pBorder);
+    }
+    GdipDeleteGraphics(g);
+    return CDRF_SKIPDEFAULT;
+}
+
+// ---------------------------------------------------------------------------
+// DPI change: move to the suggested rect and rescale every child + font
+// ---------------------------------------------------------------------------
+
+typedef struct { HWND hDlg; UINT oldDpi, newDpi; } DpiScaleCtx;
+
+static BOOL CALLBACK ScaleChildProc(HWND hChild, LPARAM lParam)
+{
+    DpiScaleCtx* ctx = (DpiScaleCtx*)lParam;
+    RECT rc;
+    GetWindowRect(hChild, &rc);
+    MapWindowPoints(NULL, ctx->hDlg, (POINT*)&rc, 2);
+    int x = MulDiv(rc.left, (int)ctx->newDpi, (int)ctx->oldDpi);
+    int y = MulDiv(rc.top,  (int)ctx->newDpi, (int)ctx->oldDpi);
+    int w = MulDiv(rc.right - rc.left,  (int)ctx->newDpi, (int)ctx->oldDpi);
+    int h = MulDiv(rc.bottom - rc.top,  (int)ctx->newDpi, (int)ctx->oldDpi);
+    SetWindowPos(hChild, NULL, x, y, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
+    return TRUE;
+}
+
+static void OnDpiChanged(HWND hDlg, OptionsDlgData* data, UINT newDpi, const RECT* suggested)
+{
+    DpiScaleCtx ctx = { hDlg, data->dpi, newDpi };
+    if (ctx.oldDpi == 0) ctx.oldDpi = 96;
+
+    // Children first (their rects are read relative to the old client origin),
+    // then the frame.
+    EnumChildWindows(hDlg, ScaleChildProc, (LPARAM)&ctx);
+    SetWindowPos(hDlg, NULL, suggested->left, suggested->top,
+                 suggested->right - suggested->left, suggested->bottom - suggested->top,
+                 SWP_NOZORDER | SWP_NOACTIVATE);
+
+    data->dpi = newDpi;
+    RebuildFonts(hDlg, data);
+    RedrawWindow(hDlg, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+}
+
+// ---------------------------------------------------------------------------
+// Interaction
+// ---------------------------------------------------------------------------
 
 static void HandlePreviewClick(HWND hDlg, OptionsDlgData* data)
 {
-    if (data->contourCount == 0 || data->scale <= 0.0) return;
-
     HWND hPreview = GetDlgItem(hDlg, IDC_MONITOR_PREVIEW);
     POINT pt;
     GetCursorPos(&pt);
     ScreenToClient(hPreview, &pt);
 
-    int bestIdx = -1;
-    int bestDist = 7; // 6px threshold + 1
+    int idx = HitTestEdge(data, pt);
+    if (idx < 0) return;
 
-    for (SIZE_T i = 0; i < data->contourCount; i++) {
-        me_Edge e = data->contourEdges[i];
+    EdgeState s = data->edgeState[idx];
+    EdgeState next = (s == EDGE_WRAP) ? EDGE_DELAYED : (s == EDGE_DELAYED) ? EDGE_NOWRAP : EDGE_WRAP;
+    data->edgeState[idx] = next;
+    CycleEdgeState(data->contourEdges[idx]);
+    InvalidateRect(hPreview, NULL, FALSE);
+}
 
-        int ex1 = data->offX + (int)((e.x1 - data->bbLeft) * data->scale);
-        int ey1 = data->offY + (int)((e.y1 - data->bbTop)  * data->scale);
-        int ex2 = data->offX + (int)((e.x2 - data->bbLeft) * data->scale);
-        int ey2 = data->offY + (int)((e.y2 - data->bbTop)  * data->scale);
-
-        int dist = INT_MAX;
-        if (ex1 == ex2) {
-            // Vertical edge
-            int yLo = (ey1 < ey2) ? ey1 : ey2;
-            int yHi = (ey1 > ey2) ? ey1 : ey2;
-            if (pt.y >= yLo && pt.y <= yHi)
-                dist = abs(pt.x - ex1);
-        } else {
-            // Horizontal edge
-            int xLo = (ex1 < ex2) ? ex1 : ex2;
-            int xHi = (ex1 > ex2) ? ex1 : ex2;
-            if (pt.x >= xLo && pt.x <= xHi)
-                dist = abs(pt.y - ey1);
-        }
-
-        if (dist < bestDist) {
-            bestDist = dist;
-            bestIdx = (int)i;
-        }
+// Called on every timer tick: track which edge is under the cursor so the
+// preview can highlight it, and refresh the live cursor dot.
+static void OnTrackTimer(HWND hDlg, OptionsDlgData* data)
+{
+    HWND hPreview = GetDlgItem(hDlg, IDC_MONITOR_PREVIEW);
+    POINT pt;
+    GetCursorPos(&pt);
+    ScreenToClient(hPreview, &pt);
+    RECT rc;
+    GetClientRect(hPreview, &rc);
+    int idx = PtInRect(&rc, pt) ? HitTestEdge(data, pt) : -1;
+    if (idx != data->hoverIdx) {
+        data->hoverIdx = idx;
+        SetCursor(LoadCursorW(NULL, idx >= 0 ? IDC_HAND : IDC_ARROW));
     }
+    InvalidateRect(hPreview, NULL, FALSE);
+}
 
-    if (bestIdx >= 0) {
-        EdgeState s = data->edgeState[bestIdx];
-        EdgeState next = (s == EDGE_WRAP) ? EDGE_DELAYED : (s == EDGE_DELAYED) ? EDGE_NOWRAP : EDGE_WRAP;
-        data->edgeState[bestIdx] = next;
-        CycleEdgeState(data->contourEdges[bestIdx]);
-        InvalidateRect(GetDlgItem(hDlg, IDC_MONITOR_PREVIEW), NULL, TRUE);
+static void CreateHintTooltip(HWND hDlg, OptionsDlgData* data)
+{
+    HWND hTip = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, NULL,
+                                WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
+                                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                hDlg, NULL, GetModuleHandleW(NULL), NULL);
+    if (!hTip) return;
+    data->hTip = hTip;
+    SendMessageW(hTip, TTM_SETMAXTIPWIDTH, 0, Px(data, 280));
+    SendMessageW(hTip, TTM_SETDELAYTIME, TTDT_AUTOPOP, 15000);
+
+    static WCHAR dragHint[] =
+        L"While the mouse button is down, this setting takes precedence over each "
+        L"edge's Wrap / Delayed setting. Edges set to \"No Wrap\" never wrap.";
+    static WCHAR previewHint[] =
+        L"Click an edge to cycle it: Wrap \x2192 Delayed \x2192 No Wrap.";
+
+    struct { int id; WCHAR* text; } tools[] = {
+        { IDC_DRAG_MODE_LABEL, dragHint },
+        { IDC_DRAG_MODE_COMBO, dragHint },
+        { IDC_MONITOR_PREVIEW, previewHint },
+    };
+    for (size_t i = 0; i < sizeof(tools) / sizeof(tools[0]); i++) {
+        TOOLINFOW ti;
+        memset(&ti, 0, sizeof(ti));
+        ti.cbSize   = sizeof(ti); // comctl32 v6 via the manifest
+        ti.uFlags   = TTF_IDISHWND | TTF_SUBCLASS;
+        ti.hwnd     = hDlg;
+        ti.uId      = (UINT_PTR)GetDlgItem(hDlg, tools[i].id);
+        ti.lpszText = tools[i].text;
+        SendMessageW(hTip, TTM_ADDTOOLW, 0, (LPARAM)&ti);
     }
 }
 
+static void DestroyDialogResources(HWND hDlg, OptionsDlgData* data)
+{
+    KillTimer(hDlg, IDT_CURSOR_TRACK);
+    if (!data) return;
+    if (data->hBrushBg)   { DeleteObject(data->hBrushBg);   data->hBrushBg = NULL; }
+    if (data->hFontUi)    { DeleteObject(data->hFontUi);    data->hFontUi = NULL; }
+    if (data->hFontLabel) { DeleteObject(data->hFontLabel); data->hFontLabel = NULL; }
+}
+
+// ---------------------------------------------------------------------------
+// Dialog procedure
+// ---------------------------------------------------------------------------
+
 static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    OptionsDlgData* data;
+    OptionsDlgData* data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
     switch (uMsg) {
-    case WM_INITDIALOG:
+    case WM_INITDIALOG: {
         data = (OptionsDlgData*)lParam;
         SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)data);
+        data->hoverIdx = -1;
+        data->dpi = GetDpiForWindow(hDlg);
+        if (data->dpi == 0) data->dpi = 96;
 
-        data->dark = IsDarkTheme();
-
-        // Copy monitor rects into local array for thread safety
+        // Snapshot monitors and contour edges
         data->count = 0;
         if (g_monitor_rects_desktop && g_monitor_count_desktop > 0) {
-            SIZE_T n = g_monitor_count_desktop;
-            if (n > MAX_PREVIEW_MONITORS) n = MAX_PREVIEW_MONITORS;
-            for (SIZE_T i = 0; i < n; i++)
-                data->rects[i] = g_monitor_rects_desktop[i];
+            SIZE_T n = min(g_monitor_count_desktop, (SIZE_T)MAX_PREVIEW_MONITORS);
+            for (SIZE_T i = 0; i < n; i++) data->rects[i] = g_monitor_rects_desktop[i];
             data->count = n;
         }
-
-        // Copy contour edges into local arrays
         data->contourCount = 0;
         if (g_desktop_contour && g_desktop_contour->size > 0) {
-            SIZE_T n = g_desktop_contour->size;
-            if (n > MAX_CONTOUR_EDGES) n = MAX_CONTOUR_EDGES;
+            SIZE_T n = min(g_desktop_contour->size, (SIZE_T)MAX_CONTOUR_EDGES);
             for (SIZE_T i = 0; i < n; i++) {
                 data->contourEdges[i] = g_desktop_contour->edges[i];
                 data->edgeState[i] = GetEdgeState(g_desktop_contour->edges[i]);
@@ -345,37 +690,13 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             data->contourCount = n;
         }
 
-        // Dark mode per-window
-        if (data->dark) {
-            if (pAllowDarkModeForWindow)
-                pAllowDarkModeForWindow(hDlg, TRUE);
-            if (pRefreshImmersiveColorPolicyState)
-                pRefreshImmersiveColorPolicyState();
-
-            // Dark title bar via DWMWA_USE_IMMERSIVE_DARK_MODE
-            BOOL darkValue = TRUE;
-            // Attribute 20 = DWMWA_USE_IMMERSIVE_DARK_MODE
-            typedef HRESULT (WINAPI *DwmSetWindowAttributeFunc)(HWND, DWORD, LPCVOID, DWORD);
-            HMODULE hDwm = GetModuleHandleW(L"dwmapi.dll");
-            if (!hDwm) hDwm = LoadLibraryW(L"dwmapi.dll");
-            if (hDwm) {
-                DwmSetWindowAttributeFunc pDwmSetAttr =
-                    (DwmSetWindowAttributeFunc)GetProcAddress(hDwm, "DwmSetWindowAttribute");
-                if (pDwmSetAttr)
-                    pDwmSetAttr(hDlg, 20, &darkValue, sizeof(darkValue));
-            }
-
-            data->hBrushBg = CreateSolidBrush(CLR_DARK_BG);
-
-            // Theme Close button for dark mode
-            HWND hBtn = GetDlgItem(hDlg, IDCANCEL);
-            SetWindowTheme(hBtn, L"DarkMode_Explorer", NULL);
-            SetWindowTheme(GetDlgItem(hDlg, IDC_DRAG_MODE_COMBO), L"DarkMode_CFD", NULL);
-        } else {
-            data->hBrushBg = NULL;
+        // Windows 11: Mica behind the title bar (no-op elsewhere)
+        {
+            int backdrop = DWMSBT_MAINWINDOW;
+            DwmSetWindowAttribute(hDlg, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop, sizeof(backdrop));
         }
 
-        // Initialize delay slider (200–1000 ms, tick every 100)
+        // Delay slider (200–1000 ms, snaps to 100)
         {
             HWND hSlider = GetDlgItem(hDlg, IDC_DELAY_SLIDER);
             SendMessageW(hSlider, TBM_SETRANGE, TRUE, MAKELPARAM(200, 1000));
@@ -383,13 +704,12 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             SendMessageW(hSlider, TBM_SETLINESIZE, 0, 100);
             SendMessageW(hSlider, TBM_SETPAGESIZE, 0, 100);
             SendMessageW(hSlider, TBM_SETPOS, TRUE, (LPARAM)g_edge_delay_ms);
-
             WCHAR buf[32];
             wsprintfW(buf, L"Delay: %lu ms", g_edge_delay_ms);
             SetDlgItemTextW(hDlg, IDC_DELAY_LABEL, buf);
         }
 
-        // Initialize "While dragging" dropdown — order matches DragWrapMode
+        // "While dragging" dropdown — order matches DragWrapMode
         {
             HWND hCombo = GetDlgItem(hDlg, IDC_DRAG_MODE_COMBO);
             static const WCHAR* modes[] = { L"Delayed Wrap", L"Wrap instantly", L"No Wrap" };
@@ -398,95 +718,103 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             SendMessageW(hCombo, CB_SETCURSEL, (WPARAM)g_drag_wrap_mode, 0);
         }
 
-        // Tooltip explaining the "While dragging" setting (label + dropdown)
-        {
-            HWND hTip = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, NULL,
-                                        WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
-                                        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                        hDlg, NULL, GetModuleHandleW(NULL), NULL);
-            if (hTip) {
-                data->hTip = hTip;
-                SendMessageW(hTip, TTM_SETMAXTIPWIDTH, 0, 260);
-                SendMessageW(hTip, TTM_SETDELAYTIME, TTDT_AUTOPOP, 15000);
-                static WCHAR hint[] =
-                    L"While mouse button is down, and the related edge is set to \"Wrap\", "
-                    L"then wrapping motion will respect this setting.";
-                int ids[] = { IDC_DRAG_MODE_LABEL, IDC_DRAG_MODE_COMBO };
-                for (int i = 0; i < 2; i++) {
-                    TOOLINFOW ti;
-                    memset(&ti, 0, sizeof(ti));
-                    // V2 size: the app has no comctl32 v6 manifest, and v5 rejects the larger struct
-                    ti.cbSize   = TTTOOLINFOW_V2_SIZE;
-                    ti.uFlags   = TTF_IDISHWND | TTF_SUBCLASS;
-                    ti.hwnd     = hDlg;
-                    ti.uId      = (UINT_PTR)GetDlgItem(hDlg, ids[i]);
-                    ti.lpszText = hint;
-                    SendMessageW(hTip, TTM_ADDTOOLW, 0, (LPARAM)&ti);
-                }
-            }
-        }
+        CreateHintTooltip(hDlg, data);
+        RebuildFonts(hDlg, data);
+        ApplyTheme(hDlg, data);
+
+        // Hide focus rectangles until the user navigates with the keyboard
+        // (Windows clears this automatically on Tab / arrow keys).
+        SendMessageW(hDlg, WM_CHANGEUISTATE, MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS | UISF_HIDEACCEL), 0);
 
         SetTimer(hDlg, IDT_CURSOR_TRACK, CURSOR_TRACK_MS, NULL);
-
         return TRUE;
+    }
 
     case WM_TIMER:
-        if (wParam == IDT_CURSOR_TRACK) {
-            InvalidateRect(GetDlgItem(hDlg, IDC_MONITOR_PREVIEW), NULL, FALSE);
+        if (data && wParam == IDT_CURSOR_TRACK) {
+            OnTrackTimer(hDlg, data);
+            return TRUE;
+        }
+        break;
+
+    case WM_DPICHANGED:
+        if (data) {
+            OnDpiChanged(hDlg, data, HIWORD(wParam), (const RECT*)lParam);
+            return TRUE;
+        }
+        break;
+
+    case WM_SETTINGCHANGE:
+        // Live light/dark switch (also fires for accent colour changes)
+        if (data && lParam && lstrcmpiW((LPCWSTR)lParam, L"ImmersiveColorSet") == 0) {
+            ApplyTheme(hDlg, data);
+            return TRUE;
+        }
+        break;
+
+    case WM_ERASEBKGND:
+        if (data && data->hBrushBg) {
+            RECT rc;
+            GetClientRect(hDlg, &rc);
+            FillRect((HDC)wParam, &rc, data->hBrushBg);
+            SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 1);
             return TRUE;
         }
         break;
 
     case WM_DRAWITEM:
-        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
         if (data) {
             DRAWITEMSTRUCT* dis = (DRAWITEMSTRUCT*)lParam;
-            if (dis->CtlID == IDC_MONITOR_PREVIEW) {
-                DrawMonitorPreview(data, dis);
-                return TRUE;
-            }
-            if (dis->CtlID == IDC_EDGE_LEGEND) {
-                DrawEdgeLegend(data, dis);
+            if (dis->CtlID == IDC_MONITOR_PREVIEW) { DrawMonitorPreview(data, dis); return TRUE; }
+            if (dis->CtlID == IDC_EDGE_LEGEND)     { DrawEdgeLegend(data, dis);     return TRUE; }
+            if (dis->CtlID == IDC_DRAG_MODE_COMBO) { DrawComboItem(data, dis);      return TRUE; }
+        }
+        break;
+
+    case WM_NOTIFY:
+        if (data) {
+            NMHDR* hdr = (NMHDR*)lParam;
+            if (hdr->idFrom == IDC_DELAY_SLIDER && hdr->code == NM_CUSTOMDRAW) {
+                SetWindowLongPtr(hDlg, DWLP_MSGRESULT, SliderCustomDraw(data, (NMCUSTOMDRAW*)lParam));
                 return TRUE;
             }
         }
         break;
 
     case WM_CTLCOLORDLG:
-        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-        if (data && data->hBrushBg)
-            return (INT_PTR)data->hBrushBg;
+        if (data && data->hBrushBg) return (INT_PTR)data->hBrushBg;
         break;
 
-    case WM_CTLCOLORLISTBOX:
-        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-        if (data && data->dark && data->hBrushBg) {
-            HDC hdcList = (HDC)wParam;
-            SetTextColor(hdcList, RGB(255, 255, 255));
-            SetBkColor(hdcList, CLR_DARK_BG);
+    case WM_CTLCOLORSTATIC:
+        if (data && data->hBrushBg) {
+            HDC hdc = (HDC)wParam;
+            int id = GetDlgCtrlID((HWND)lParam);
+            BOOL subtle = (id == IDC_LAYOUT_HINT);
+            SetTextColor(hdc, ToColorRef(subtle ? data->theme->subtle : data->theme->text));
+            SetBkMode(hdc, TRANSPARENT);
             return (INT_PTR)data->hBrushBg;
         }
         break;
 
-    case WM_CTLCOLORSTATIC:
-        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-        if (data && data->dark) {
-            HDC hdcStatic = (HDC)wParam;
-            SetTextColor(hdcStatic, RGB(255, 255, 255));
-            SetBkMode(hdcStatic, TRANSPARENT);
-            if (data->hBrushBg)
-                return (INT_PTR)data->hBrushBg;
+    case WM_CTLCOLORLISTBOX:
+        if (data && data->dark && data->hBrushBg) {
+            HDC hdc = (HDC)wParam;
+            SetTextColor(hdc, ToColorRef(data->theme->text));
+            SetBkColor(hdc, ToColorRef(data->theme->bg));
+            return (INT_PTR)data->hBrushBg;
         }
         break;
 
     case WM_HSCROLL:
-        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
         if (data && (HWND)lParam == GetDlgItem(hDlg, IDC_DELAY_SLIDER)) {
             DWORD raw = (DWORD)SendMessageW((HWND)lParam, TBM_GETPOS, 0, 0);
             DWORD pos = ((raw + 50) / 100) * 100; // snap to 100s
             if (pos < 200) pos = 200;
             if (pos > 1000) pos = 1000;
             SendMessageW((HWND)lParam, TBM_SETPOS, TRUE, (LPARAM)pos);
+            // The trackbar only invalidates the thumb's old/new rects, but our
+            // channel fill depends on the thumb position: repaint all of it.
+            InvalidateRect((HWND)lParam, NULL, TRUE);
             g_edge_delay_ms = pos;
             SaveDelayMs();
             WCHAR buf[32];
@@ -497,11 +825,8 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
         break;
 
     case WM_COMMAND:
-        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
         if (LOWORD(wParam) == IDCANCEL) {
-            KillTimer(hDlg, IDT_CURSOR_TRACK);
-            if (data && data->hBrushBg)
-                DeleteObject(data->hBrushBg);
+            DestroyDialogResources(hDlg, data);
             EndDialog(hDlg, 0);
             return TRUE;
         }
@@ -520,10 +845,7 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
         break;
 
     case WM_CLOSE:
-        KillTimer(hDlg, IDT_CURSOR_TRACK);
-        data = (OptionsDlgData*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-        if (data && data->hBrushBg)
-            DeleteObject(data->hBrushBg);
+        DestroyDialogResources(hDlg, data);
         EndDialog(hDlg, 0);
         return TRUE;
     }
@@ -534,9 +856,17 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 void ShowOptionsDialog(HWND hwndParent)
 {
     extern HINSTANCE hInst;
+
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_BAR_CLASSES | ICC_WIN95_CLASSES };
     InitCommonControlsEx(&icc);
+
+    ULONG_PTR gdipToken = 0;
+    GdiplusStartupInput gdipIn = { 1, NULL, FALSE, FALSE };
+    BOOL gdipOk = (GdiplusStartup(&gdipToken, &gdipIn, NULL) == Ok);
+
     OptionsDlgData data;
     memset(&data, 0, sizeof(data));
     DialogBoxParamW(hInst, MAKEINTRESOURCEW(IDD_OPTIONS), hwndParent, OptionsDlgProc, (LPARAM)&data);
+
+    if (gdipOk) GdiplusShutdown(gdipToken);
 }

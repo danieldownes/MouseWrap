@@ -1,6 +1,7 @@
 #include "main.h"
 #include "mouse_wrap.h" // For UpdateMonitorContours and CleanupGlobalContourResources
 #include "options_dialog.h"
+#include "darkmode.h"
 #include <windows.h>
 #include <ShellScalingApi.h> // For SetProcessDpiAwarenessContext
 
@@ -26,7 +27,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
     hInst = hInstance;
 
-    InitDarkMode();
+    DarkMode_Init();
 
     WNDCLASSW wc = { 0 };
     wc.lpfnWndProc = WindowProc;

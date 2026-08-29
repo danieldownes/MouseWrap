@@ -46,6 +46,14 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Manifest (Common Controls v6, Per-Monitor V2 DPI, supported OS)
+//
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "MW4.manifest"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Icon
 //
 
@@ -65,19 +73,20 @@ IDI_ICON_DISABLED_LIGHT ICON                    "mw4-disabled-light.ico"
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 320, 280
-STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_OPTIONS DIALOGEX 0, 0, 340, 300
+STYLE DS_MODALFRAME | DS_CENTER | DS_SHELLFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "MouseWrap Options"
 FONT 9, "Segoe UI"
 BEGIN
-    GROUPBOX        "Monitor Layout", -1, 10, 10, 300, 170
-    CONTROL         "", IDC_MONITOR_PREVIEW, "Static", SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE, 20, 24, 280, 148
-    CONTROL         "", IDC_EDGE_LEGEND, "Static", SS_OWNERDRAW | WS_CHILD | WS_VISIBLE, 10, 185, 240, 14
-    LTEXT           "Delay: 300 ms", IDC_DELAY_LABEL, 10, 206, 60, 10
-    CONTROL         "", IDC_DELAY_SLIDER, "msctls_trackbar32", TBS_AUTOTICKS | WS_CHILD | WS_VISIBLE, 72, 203, 238, 16
-    LTEXT           "While dragging:", IDC_DRAG_MODE_LABEL, 10, 228, 60, 10, SS_NOTIFY
-    COMBOBOX        IDC_DRAG_MODE_COMBO, 72, 225, 110, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Close", IDCANCEL, 260, 252, 50, 16
+    LTEXT           "Monitor layout", IDC_LAYOUT_HEADING, 12, 10, 200, 10
+    CONTROL         "", IDC_MONITOR_PREVIEW, "Static", SS_OWNERDRAW | SS_NOTIFY | WS_CHILD | WS_VISIBLE, 12, 24, 316, 160
+    CONTROL         "", IDC_EDGE_LEGEND, "Static", SS_OWNERDRAW | WS_CHILD | WS_VISIBLE, 12, 190, 220, 14
+    LTEXT           "Click an edge to change how the pointer wraps there.", IDC_LAYOUT_HINT, 12, 207, 316, 10
+    LTEXT           "Delay: 300 ms", IDC_DELAY_LABEL, 12, 230, 64, 10
+    CONTROL         "", IDC_DELAY_SLIDER, "msctls_trackbar32", TBS_AUTOTICKS | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 80, 225, 248, 20
+    LTEXT           "While dragging:", IDC_DRAG_MODE_LABEL, 12, 254, 64, 10, SS_NOTIFY
+    COMBOBOX        IDC_DRAG_MODE_COMBO, 80, 251, 120, 100, CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "Close", IDCANCEL, 272, 276, 56, 16
 END
 
 

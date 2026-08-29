@@ -6,13 +6,14 @@ CC ?= gcc
 VERSION = 4.2
 CFLAGS  = -std=c17 -Wall -Wextra -pedantic -Os -DUNICODE -D_UNICODE \
           -D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00 -DPRODVER_STR='"$(VERSION)"'
-LDFLAGS = -mwindows -municode -s -luser32 -lshell32 -ladvapi32 -lshcore -lgdi32 -lcomctl32 -ldwmapi -luxtheme
+LDFLAGS = -mwindows -municode -s -luser32 -lshell32 -ladvapi32 -lshcore -lgdi32 -lgdiplus -lcomctl32 -ldwmapi -luxtheme
 
 SRCS = src/main.c src/mouse_wrap.c src/multimonitor_contour.c \
-       src/multimonitor_edges.c src/taskbar.c src/startup.c src/options_dialog.c
+       src/multimonitor_edges.c src/taskbar.c src/startup.c src/options_dialog.c \
+       src/darkmode.c
 HEADERS = src/main.h src/mouse_wrap.h src/multimonitor_contour.h \
           src/multimonitor_edges.h src/taskbar.h src/startup.h src/resource.h \
-          src/options_dialog.h
+          src/options_dialog.h src/darkmode.h
 OBJS = $(SRCS:.c=.o)
 RES_OBJ = src/MW4_res.o
 
@@ -46,7 +47,7 @@ src/%.o: src/%.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile Windows resource file (icons, version info)
-$(RES_OBJ): src/MW4.rc src/resource.h src/mw4.ico src/mw4-disabled.ico src/mw4-light.ico src/mw4-disabled-light.ico
+$(RES_OBJ): src/MW4.rc src/MW4.manifest src/resource.h src/mw4.ico src/mw4-disabled.ico src/mw4-light.ico src/mw4-disabled-light.ico
 	windres -DUNICODE -D_UNICODE $< -o $@
 
 # --- Test targets ---

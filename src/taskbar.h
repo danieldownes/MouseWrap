@@ -7,7 +7,6 @@
 #include "main.h"
 #include "mouse_wrap.h"
 
-BOOL IsDarkTheme(void);
 void CreateTrayIcon(HWND hwnd, HINSTANCE hInst);
 void ShowContextMenu(HWND hwnd);
 void CreateContextMenu(void);

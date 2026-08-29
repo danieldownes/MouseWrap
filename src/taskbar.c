@@ -1,5 +1,6 @@
 #include "taskbar.h"
 #include "options_dialog.h"
+#include "darkmode.h"
 #include <string.h> // For standard memset
 
 #define WM_TRAYICON (WM_USER + 1)
@@ -21,23 +22,6 @@ void* m_memset(void* dest, int c, size_t count) {
     return dest;
 }
 
-BOOL IsDarkTheme(void)
-{
-    HKEY hKey;
-    DWORD dwValue = 0;
-    DWORD dwSize = sizeof(DWORD);
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
-    {
-        if (RegQueryValueExW(hKey, L"AppsUseLightTheme", NULL, NULL, (LPBYTE)&dwValue, &dwSize) == ERROR_SUCCESS)
-        {
-            RegCloseKey(hKey);
-            return dwValue == 0; // 0 means dark theme
-        }
-        RegCloseKey(hKey);
-    }
-    return FALSE; // Default to light theme if there is an issue
-}
-
 void CreateTrayIcon(HWND hwnd, HINSTANCE hInst)
 {
     hInstMain = hInst;
@@ -53,9 +37,9 @@ void CreateTrayIcon(HWND hwnd, HINSTANCE hInst)
     nid.uCallbackMessage = WM_TRAYICON;
     OutputDebugStringW(L"MouseWrap: nid struct basic members initialized.\n");
 
-    BOOL isDarkTheme = IsDarkTheme();
+    BOOL isDarkTheme = DarkMode_IsEnabled();
     WCHAR themeMsg[100];
-    wsprintfW(themeMsg, L"MouseWrap: IsDarkTheme() returned: %s.\n", isDarkTheme ? L"TRUE" : L"FALSE");
+    wsprintfW(themeMsg, L"MouseWrap: DarkMode_IsEnabled() returned: %s.\n", isDarkTheme ? L"TRUE" : L"FALSE");
     OutputDebugStringW(themeMsg);
 
     UINT iconID = isDarkTheme ? IDI_ICON_ENABLED_DARK : IDI_ICON_ENABLED_LIGHT;
@@ -156,7 +140,7 @@ void TaskBarCheckCommand(WORD cmd)
 void IconClicked(HWND hwnd)
 {
     ToggleWrapEnabled(hwnd);
-    BOOL isDarkTheme = IsDarkTheme();
+    BOOL isDarkTheme = DarkMode_IsEnabled();
     HICON hNewIcon = LoadIconW(hInstMain, MAKEINTRESOURCEW(wrapEnabled ?
         (isDarkTheme ? IDI_ICON_ENABLED_DARK : IDI_ICON_ENABLED_LIGHT) :
         (isDarkTheme ? IDI_ICON_DISABLED_DARK : IDI_ICON_DISABLED_LIGHT)));
