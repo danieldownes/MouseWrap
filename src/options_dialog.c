@@ -538,6 +538,46 @@ static LRESULT SliderCustomDraw(OptionsDlgData* data, NMCUSTOMDRAW* cd)
     return CDRF_SKIPDEFAULT;
 }
 
+// The trackbar erases itself with COLOR_WINDOW (white, even in dark mode)
+// before every repaint, which flashes while dragging.  This subclass skips
+// the erase and paints the control double-buffered: dialog background first,
+// then the control (and our custom draw) into a memory bitmap, blitted once.
+#define SLIDER_SUBCLASS_ID 1
+
+static LRESULT CALLBACK SliderSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam,
+                                           UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+    OptionsDlgData* data = (OptionsDlgData*)dwRefData;
+    switch (msg) {
+    case WM_ERASEBKGND:
+        return 1; // background is painted in WM_PAINT
+
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+        HDC hdcMem = CreateCompatibleDC(hdc);
+        HBITMAP hBmp = CreateCompatibleBitmap(hdc, rc.right, rc.bottom);
+        HBITMAP hOld = SelectObject(hdcMem, hBmp);
+        if (data && data->hBrushBg) FillRect(hdcMem, &rc, data->hBrushBg);
+        // Common controls paint into the DC passed as wParam when given one.
+        DefSubclassProc(hwnd, WM_PAINT, (WPARAM)hdcMem, 0);
+        BitBlt(hdc, 0, 0, rc.right, rc.bottom, hdcMem, 0, 0, SRCCOPY);
+        SelectObject(hdcMem, hOld);
+        DeleteObject(hBmp);
+        DeleteDC(hdcMem);
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+
+    case WM_NCDESTROY:
+        RemoveWindowSubclass(hwnd, SliderSubclassProc, uIdSubclass);
+        break;
+    }
+    return DefSubclassProc(hwnd, msg, wParam, lParam);
+}
+
 // ---------------------------------------------------------------------------
 // DPI change: move to the suggested rect and rescale every child + font
 // ---------------------------------------------------------------------------
@@ -704,6 +744,7 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             SendMessageW(hSlider, TBM_SETLINESIZE, 0, 100);
             SendMessageW(hSlider, TBM_SETPAGESIZE, 0, 100);
             SendMessageW(hSlider, TBM_SETPOS, TRUE, (LPARAM)g_edge_delay_ms);
+            SetWindowSubclass(hSlider, SliderSubclassProc, SLIDER_SUBCLASS_ID, (DWORD_PTR)data);
             WCHAR buf[32];
             wsprintfW(buf, L"Delay: %lu ms", g_edge_delay_ms);
             SetDlgItemTextW(hDlg, IDC_DELAY_LABEL, buf);
@@ -813,8 +854,9 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
             if (pos > 1000) pos = 1000;
             SendMessageW((HWND)lParam, TBM_SETPOS, TRUE, (LPARAM)pos);
             // The trackbar only invalidates the thumb's old/new rects, but our
-            // channel fill depends on the thumb position: repaint all of it.
-            InvalidateRect((HWND)lParam, NULL, TRUE);
+            // channel fill depends on the thumb position: repaint all of it
+            // (no erase: the subclass paints the background itself).
+            InvalidateRect((HWND)lParam, NULL, FALSE);
             g_edge_delay_ms = pos;
             SaveDelayMs();
             WCHAR buf[32];
