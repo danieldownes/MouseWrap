@@ -4,7 +4,8 @@
 #include <wctype.h>
 #include "mouse_wrap.h"
 
-/* ---- IsPointNearEdge — vertical edge ---- */
+/* ---- IsPointNearEdge — vertical edge ----
+ * An edge at x=10 is the line between pixel 9 and pixel 10; both are "on" it. */
 
 void test_near_edge_vertical_on_edge(void) {
     me_Edge edge = me_create_edge(10, 10, 0, 20);
@@ -14,20 +15,33 @@ void test_near_edge_vertical_on_edge(void) {
 
 void test_near_edge_vertical_within_tolerance(void) {
     me_Edge edge = me_create_edge(10, 10, 0, 20);
-    POINT pt = { 11, 10 };
-    TEST_ASSERT_TRUE(IsPointNearEdge(pt, edge, 1));
+    POINT inside_right = { 11, 10 };  /* pixel 10 + 1 */
+    POINT inside_left  = { 8, 10 };   /* pixel 9 - 1 */
+    TEST_ASSERT_TRUE(IsPointNearEdge(inside_right, edge, 1));
+    TEST_ASSERT_TRUE(IsPointNearEdge(inside_left, edge, 1));
 }
 
 void test_near_edge_vertical_outside_tolerance(void) {
     me_Edge edge = me_create_edge(10, 10, 0, 20);
-    POINT pt = { 12, 10 };
-    TEST_ASSERT_FALSE(IsPointNearEdge(pt, edge, 1));
+    POINT right = { 12, 10 };
+    POINT left  = { 7, 10 };
+    TEST_ASSERT_FALSE(IsPointNearEdge(right, edge, 1));
+    TEST_ASSERT_FALSE(IsPointNearEdge(left, edge, 1));
 }
 
 void test_near_edge_vertical_outside_range(void) {
     me_Edge edge = me_create_edge(10, 10, 0, 20);
     POINT pt = { 10, 25 }; /* y beyond edge span */
     TEST_ASSERT_FALSE(IsPointNearEdge(pt, edge, 1));
+}
+
+/* The span is half-open: y2 is the exclusive max, so row 19 is the last row. */
+void test_near_edge_vertical_span_is_half_open(void) {
+    me_Edge edge = me_create_edge(10, 10, 0, 20);
+    POINT last = { 10, 19 };
+    POINT past = { 10, 20 };
+    TEST_ASSERT_TRUE(IsPointNearEdge(last, edge, 0));
+    TEST_ASSERT_FALSE(IsPointNearEdge(past, edge, 0));
 }
 
 /* ---- IsPointNearEdge — horizontal edge ---- */
@@ -40,14 +54,18 @@ void test_near_edge_horizontal_on_edge(void) {
 
 void test_near_edge_horizontal_within_tolerance(void) {
     me_Edge edge = me_create_edge(0, 20, 10, 10);
-    POINT pt = { 10, 11 };
-    TEST_ASSERT_TRUE(IsPointNearEdge(pt, edge, 1));
+    POINT below = { 10, 11 };
+    POINT above = { 10, 8 };
+    TEST_ASSERT_TRUE(IsPointNearEdge(below, edge, 1));
+    TEST_ASSERT_TRUE(IsPointNearEdge(above, edge, 1));
 }
 
 void test_near_edge_horizontal_outside_tolerance(void) {
     me_Edge edge = me_create_edge(0, 20, 10, 10);
-    POINT pt = { 10, 12 };
-    TEST_ASSERT_FALSE(IsPointNearEdge(pt, edge, 1));
+    POINT below = { 10, 12 };
+    POINT above = { 10, 7 };
+    TEST_ASSERT_FALSE(IsPointNearEdge(below, edge, 1));
+    TEST_ASSERT_FALSE(IsPointNearEdge(above, edge, 1));
 }
 
 void test_near_edge_horizontal_outside_range(void) {
@@ -56,14 +74,55 @@ void test_near_edge_horizontal_outside_range(void) {
     TEST_ASSERT_FALSE(IsPointNearEdge(pt, edge, 1));
 }
 
-/* ---- Zero tolerance ---- */
+/* ---- Zero tolerance: exactly the two pixels either side of the line ---- */
 
 void test_near_edge_zero_tolerance(void) {
     me_Edge edge = me_create_edge(10, 10, 0, 20);
-    POINT on  = { 10, 10 };
-    POINT off = { 11, 10 };
-    TEST_ASSERT_TRUE(IsPointNearEdge(on, edge, 0));
-    TEST_ASSERT_FALSE(IsPointNearEdge(off, edge, 0));
+    POINT on_after  = { 10, 10 };
+    POINT on_before = { 9, 10 };
+    POINT off_after  = { 11, 10 };
+    POINT off_before = { 8, 10 };
+    TEST_ASSERT_TRUE(IsPointNearEdge(on_after, edge, 0));
+    TEST_ASSERT_TRUE(IsPointNearEdge(on_before, edge, 0));
+    TEST_ASSERT_FALSE(IsPointNearEdge(off_after, edge, 0));
+    TEST_ASSERT_FALSE(IsPointNearEdge(off_before, edge, 0));
+}
+
+/* ---- All four sides of a real screen trigger on their outermost pixel ----
+ * 2560x1440 monitor: pixels x 0..2559, y 0..1439; contour edges at
+ * x=0, x=2560, y=0, y=1440.  With zero tolerance, only the outermost pixel
+ * on each side may hit, and the pixel one inward must not. */
+
+void test_near_edge_screen_sides_are_symmetric(void) {
+    me_Rect r = me_create_rect(0, 2560, 0, 1440);
+    me_Edge left   = me_create_edge(0, 0, 0, 1440);
+    me_Edge right  = me_create_edge(2560, 2560, 0, 1440);
+    me_Edge top    = me_create_edge(0, 2560, 0, 0);
+    me_Edge bottom = me_create_edge(0, 2560, 1440, 1440);
+    (void)r;
+
+    POINT l_edge = { 0, 700 },    l_in = { 1, 700 };
+    POINT r_edge = { 2559, 700 }, r_in = { 2558, 700 };
+    POINT t_edge = { 1000, 0 },   t_in = { 1000, 1 };
+    POINT b_edge = { 1000, 1439 }, b_in = { 1000, 1438 };
+
+    TEST_ASSERT_TRUE (IsPointNearEdge(l_edge, left, 0));
+    TEST_ASSERT_FALSE(IsPointNearEdge(l_in,   left, 0));
+    TEST_ASSERT_TRUE (IsPointNearEdge(r_edge, right, 0));
+    TEST_ASSERT_FALSE(IsPointNearEdge(r_in,   right, 0));
+    TEST_ASSERT_TRUE (IsPointNearEdge(t_edge, top, 0));
+    TEST_ASSERT_FALSE(IsPointNearEdge(t_in,   top, 0));
+    TEST_ASSERT_TRUE (IsPointNearEdge(b_edge, bottom, 0));
+    TEST_ASSERT_FALSE(IsPointNearEdge(b_in,   bottom, 0));
+}
+
+/* Corner pixels are on both of their edges. */
+void test_near_edge_corner_pixels(void) {
+    me_Edge right  = me_create_edge(2560, 2560, 0, 1440);
+    me_Edge bottom = me_create_edge(0, 2560, 1440, 1440);
+    POINT corner = { 2559, 1439 };
+    TEST_ASSERT_TRUE(IsPointNearEdge(corner, right, 0));
+    TEST_ASSERT_TRUE(IsPointNearEdge(corner, bottom, 0));
 }
 
 /* ---- RemoveEdgesNotOnContour — strip taskbar-boundary edges ---- */

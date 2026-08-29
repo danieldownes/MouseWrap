@@ -32,7 +32,8 @@ void WrapMouseWhileDragging();
 void UpdateMonitorContours(void);
 void CleanupGlobalContourResources(void);
 
-// Test whether a point is within tolerance pixels of an edge segment
+// Test whether a point is on an edge segment: on pixel c-1 or c for an edge
+// at coordinate c, widened by tolerance extra pixels on each side.
 BOOL IsPointNearEdge(POINT pt, me_Edge edge, int tolerance);
 
 // Remove edges from list that do not lie on any edge of reference.

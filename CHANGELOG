@@ -4,6 +4,7 @@
 
 Changes:
 
+ - Fixed the left and top screen edges wrapping one pixel before the cursor reached the edge (the right and bottom edges were exact). All four sides now trigger on the outermost pixel, and the cursor lands the same distance in from the edge whichever way it wraps.
  - Edge states are remembered per monitor layout: turning a monitor off (or any other temporary change) switches to that layout\'s own settings, and the original settings come back untouched when the previous arrangement is restored. Existing settings are migrated to the current layout automatically.
  - "While dragging" option: choose how edges set to Wrap behave while the primary mouse button is held — Delayed Wrap (default), Wrap instantly, or No Wrap. Set via a dropdown in the Options dialog (hover for a hint) and persisted in the registry.
  - No wrapping at the taskbar boundary: the edge where the work area meets the taskbar is no longer treated as a wrap edge, so the cursor can rest against the taskbar without jumping to the opposite side.

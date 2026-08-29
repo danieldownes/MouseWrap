@@ -255,21 +255,32 @@ void ToggleWrapEnabled(HWND hwnd)
     }
 }
 
-// How many pixels from a contour edge the cursor must be to trigger a wrap.
-// 1 px means the cursor must be directly on or adjacent to the boundary.
-#define PIXEL_TOLERANCE 1
-// How many pixels inward from the opposite contour edge to place the cursor
-// after wrapping.  Must be > PIXEL_TOLERANCE to avoid immediately re-triggering.
+// Extra pixels beyond a contour edge's own boundary pixel that still count
+// as a hit (see IsPointNearEdge).  0 means the cursor must be on the
+// outermost pixel of the screen, on every side alike.
+#define PIXEL_TOLERANCE 0
+// How many pixels of screen to leave between the cursor and the opposite
+// edge's boundary pixel after wrapping.  Must be > PIXEL_TOLERANCE to avoid
+// immediately re-triggering.
 #define WRAP_OFFSET 5
 
+// An edge at coordinate c is the line between pixel c-1 and pixel c, so a
+// cursor on either of those two pixels is on the edge.  Monitor rectangles
+// use an exclusive max, so on a right/bottom edge the cursor can only ever
+// reach pixel c-1, while on a left/top edge it reaches pixel c.  Counting
+// both pixels makes all four sides trigger exactly on their outermost pixel.
+// tolerance widens the band by that many extra pixels on each side.
+// The edge span is half-open ([y1,y2) / [x1,x2)) for the same reason.
 BOOL IsPointNearEdge(POINT pt, me_Edge edge, int tolerance) {
     if (edge.x1 == edge.x2) {
-        if (abs(pt.x - edge.x1) <= tolerance) {
-            return (pt.y >= edge.y1 && pt.y <= edge.y2);
+        long d = pt.x - edge.x1;
+        if (d >= -1 - tolerance && d <= tolerance) {
+            return (pt.y >= edge.y1 && pt.y < edge.y2);
         }
     } else if (edge.y1 == edge.y2) {
-        if (abs(pt.y - edge.y1) <= tolerance) {
-            return (pt.x >= edge.x1 && pt.x <= edge.x2);
+        long d = pt.y - edge.y1;
+        if (d >= -1 - tolerance && d <= tolerance) {
+            return (pt.x >= edge.x1 && pt.x < edge.x2);
         }
     }
     return FALSE;
@@ -598,12 +609,12 @@ static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const ch
 
         if (hit_edge.x1 == hit_edge.x2) { // Vertical edge
             BOOL is_left_ish_hit = (hit_edge.x1 < contour_center_x);
-            new_pos.x = is_left_ish_hit ? (contour_max_x - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
-            new_pos.y = max(contour_min_y, min(current_pos.y, contour_max_y));
+            new_pos.x = is_left_ish_hit ? (contour_max_x - 1 - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
+            new_pos.y = max(contour_min_y, min(current_pos.y, contour_max_y - 1));
         } else { // Horizontal edge
             BOOL is_top_ish_hit = (hit_edge.y1 < contour_center_y);
-            new_pos.y = is_top_ish_hit ? (contour_max_y - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
-            new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x));
+            new_pos.y = is_top_ish_hit ? (contour_max_y - 1 - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
+            new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x - 1));
         }
 
         if (new_pos.x != current_pos.x || new_pos.y != current_pos.y) {
