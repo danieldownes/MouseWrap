@@ -99,6 +99,11 @@ typedef struct {
 
 static int Px(const OptionsDlgData* d, int at96) { return MulDiv(at96, (int)d->dpi, 96); }
 
+// The dialog is modal to the hidden main window, so the tray menu keeps
+// working while it is open; remember the open instance and focus it instead
+// of creating a second one.
+static HWND s_hOptionsDlg = NULL;
+
 // ---------------------------------------------------------------------------
 // Fonts / theme helpers
 // ---------------------------------------------------------------------------
@@ -709,6 +714,7 @@ static INT_PTR CALLBACK OptionsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
     case WM_INITDIALOG: {
         data = (OptionsDlgData*)lParam;
         SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)data);
+        s_hOptionsDlg = hDlg;
         data->hoverIdx = -1;
         data->dpi = GetDpiForWindow(hDlg);
         if (data->dpi == 0) data->dpi = 96;
@@ -899,6 +905,12 @@ void ShowOptionsDialog(HWND hwndParent)
 {
     extern HINSTANCE hInst;
 
+    if (s_hOptionsDlg != NULL) {
+        ShowWindow(s_hOptionsDlg, SW_SHOW);
+        SetForegroundWindow(s_hOptionsDlg);
+        return;
+    }
+
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_BAR_CLASSES | ICC_WIN95_CLASSES };
     InitCommonControlsEx(&icc);
 
@@ -909,6 +921,7 @@ void ShowOptionsDialog(HWND hwndParent)
     OptionsDlgData data;
     memset(&data, 0, sizeof(data));
     DialogBoxParamW(hInst, MAKEINTRESOURCEW(IDD_OPTIONS), hwndParent, OptionsDlgProc, (LPARAM)&data);
+    s_hOptionsDlg = NULL;
 
     if (gdipOk) GdiplusShutdown(gdipToken);
 }
