@@ -43,6 +43,9 @@ void RemoveEdgesNotOnContour(EdgeList* list, const EdgeList* reference);
 // Edge state management.  Edge states are stored per monitor layout
 // (see GetLayoutId); Save/LoadEdgeStates act on the current layout.
 EdgeState GetEdgeState(me_Edge edge);
+// Find an opposite boundary on the same occupied row/column of the desktop.
+BOOL GetWrapDestination(POINT current, me_Edge edge, const me_Rect* rects,
+                        SIZE_T count, POINT* destination);
 void CycleEdgeState(me_Edge edge);
 void SaveEdgeStates(void);
 void LoadEdgeStates(void);

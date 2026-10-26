@@ -554,6 +554,46 @@ static me_Edge g_delay_edge;
 static BOOL    g_delay_active = FALSE;
 static DWORD   g_delay_start  = 0;
 
+// Identify the edge from its owning monitor, rather than the desktop centre.
+// Only consider monitors intersecting the cursor's row/column when finding
+// the opposite boundary, so the landing point cannot fall in a desktop gap.
+BOOL GetWrapDestination(POINT current, me_Edge edge, const me_Rect* rects,
+                        SIZE_T count, POINT* destination) {
+    if (!rects || !destination || !IsPointNearEdge(current, edge, 0)) return FALSE;
+    BOOL vertical = edge.x1 == edge.x2;
+    BOOL found = FALSE, low_side = FALSE;
+    for (SIZE_T i = 0; i < count; ++i) {
+        const me_Rect* r = &rects[i];
+        if (vertical && current.y >= r->yMin && current.y < r->yMax) {
+            if (edge.x1 == r->xMin) { low_side = TRUE; found = TRUE; break; }
+            if (edge.x1 == r->xMax) { found = TRUE; break; }
+        } else if (!vertical && current.x >= r->xMin && current.x < r->xMax) {
+            if (edge.y1 == r->yMin) { low_side = TRUE; found = TRUE; break; }
+            if (edge.y1 == r->yMax) { found = TRUE; break; }
+        }
+    }
+    if (!found) return FALSE;
+    const me_Rect* target = NULL;
+    for (SIZE_T i = 0; i < count; ++i) {
+        const me_Rect* r = &rects[i];
+        if (vertical ? (current.y < r->yMin || current.y >= r->yMax)
+                     : (current.x < r->xMin || current.x >= r->xMax)) continue;
+        int boundary = vertical ? (low_side ? r->xMax : r->xMin)
+                                : (low_side ? r->yMax : r->yMin);
+        int best = target ? (vertical ? (low_side ? target->xMax : target->xMin)
+                                     : (low_side ? target->yMax : target->yMin)) : 0;
+        if (!target || (low_side ? boundary > best : boundary < best)) target = r;
+    }
+    if (!target) return FALSE;
+    *destination = current;
+    int lo = vertical ? target->xMin : target->yMin;
+    int hi = (vertical ? target->xMax : target->yMax) - 1;
+    int offset = min(WRAP_OFFSET, (hi - lo) / 2);
+    if (vertical) destination->x = low_side ? hi - offset : lo + offset;
+    else destination->y = low_side ? hi - offset : lo + offset;
+    return TRUE;
+}
+
 // Check a contour for an edge hit and wrap the cursor if found.
 // Returns TRUE if a wrap was performed.
 static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const char* contour_type_str, BOOL dragging)
@@ -561,22 +601,6 @@ static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const ch
     if (contour == NULL || contour->size == 0) return FALSE;
 
     char dbg_buf[512];
-
-    // Calculate bounding box
-    long contour_min_x = contour->edges[0].x1;
-    long contour_max_x = contour->edges[0].x1;
-    long contour_min_y = contour->edges[0].y1;
-    long contour_max_y = contour->edges[0].y1;
-
-    for (SIZE_T k = 0; k < contour->size; ++k) {
-        me_Edge ce = contour->edges[k];
-        contour_min_x = min(contour_min_x, ce.x1);
-        contour_max_x = max(contour_max_x, ce.x2);
-        contour_min_y = min(contour_min_y, ce.y1);
-        contour_max_y = max(contour_max_y, ce.y2);
-    }
-    long contour_center_x = contour_min_x + (contour_max_x - contour_min_x) / 2;
-    long contour_center_y = contour_min_y + (contour_max_y - contour_min_y) / 2;
 
     for (SIZE_T i = 0; i < contour->size; i++) {
         me_Edge hit_edge = contour->edges[i];
@@ -610,19 +634,13 @@ static BOOL TryWrapAgainstContour(POINT current_pos, EdgeList* contour, const ch
             current_pos.x, current_pos.y, contour_type_str);
         OutputDebugStringA(dbg_buf);
 
-        if (hit_edge.x1 == hit_edge.x2) { // Vertical edge
-            BOOL is_left_ish_hit = (hit_edge.x1 < contour_center_x);
-            new_pos.x = is_left_ish_hit ? (contour_max_x - 1 - WRAP_OFFSET) : (contour_min_x + WRAP_OFFSET);
-            new_pos.y = max(contour_min_y, min(current_pos.y, contour_max_y - 1));
-        } else { // Horizontal edge
-            BOOL is_top_ish_hit = (hit_edge.y1 < contour_center_y);
-            new_pos.y = is_top_ish_hit ? (contour_max_y - 1 - WRAP_OFFSET) : (contour_min_y + WRAP_OFFSET);
-            new_pos.x = max(contour_min_x, min(current_pos.x, contour_max_x - 1));
-        }
+        if (!GetWrapDestination(current_pos, hit_edge, g_monitor_rects_desktop,
+                                g_monitor_count_desktop, &new_pos))
+            continue;
 
         if (new_pos.x != current_pos.x || new_pos.y != current_pos.y) {
-            SetCursorPos(new_pos.x, new_pos.y);
-            return TRUE;
+            if (SetCursorPos(new_pos.x, new_pos.y))
+                return TRUE;
         }
     }
     return FALSE;

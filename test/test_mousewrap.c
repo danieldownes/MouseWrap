@@ -4,6 +4,40 @@
 #include <wctype.h>
 #include "mouse_wrap.h"
 
+/* Physical coordinates of the reported mixed-DPI, staggered layout. */
+void test_wrap_staggered_layout_destinations(void) {
+    me_Rect r[] = {{0,3840,0,2400}, {3840,6400,-319,761}};
+    POINT out;
+    TEST_ASSERT_TRUE(GetWrapDestination((POINT){5000,760},
+        me_create_edge(3840,6400,761,761), r, 2, &out));
+    TEST_ASSERT_EQUAL_INT(5000, out.x);
+    TEST_ASSERT_EQUAL_INT(-314, out.y);
+    TEST_ASSERT_TRUE(GetWrapDestination((POINT){5000,-319},
+        me_create_edge(3840,6400,-319,-319), r, 2, &out));
+    TEST_ASSERT_EQUAL_INT(755, out.y);
+    TEST_ASSERT_TRUE(GetWrapDestination((POINT){2000,2399},
+        me_create_edge(0,3840,2400,2400), r, 2, &out));
+    TEST_ASSERT_EQUAL_INT(5, out.y);
+    TEST_ASSERT_TRUE(GetWrapDestination((POINT){3839,1500},
+        me_create_edge(3840,3840,761,2400), r, 2, &out));
+    TEST_ASSERT_EQUAL_INT(5, out.x);
+    TEST_ASSERT_EQUAL_INT(1500, out.y);
+    TEST_ASSERT_TRUE(GetWrapDestination((POINT){0,500},
+        me_create_edge(0,0,0,761), r, 2, &out));
+    TEST_ASSERT_EQUAL_INT(6394, out.x);
+
+    // Mirrored arrangement: screen 2 sits below the primary. Its top edge
+    // must wrap down even when it lies below the overall desktop centre.
+    me_Rect lower[] = {{0,3840,0,2400}, {3840,6400,2000,3080}};
+    TEST_ASSERT_TRUE(GetWrapDestination((POINT){5000,2000},
+        me_create_edge(3840,6400,2000,2000), lower, 2, &out));
+    TEST_ASSERT_EQUAL_INT(5000, out.x);
+    TEST_ASSERT_EQUAL_INT(3074, out.y);
+    TEST_ASSERT_TRUE(GetWrapDestination((POINT){5000,3079},
+        me_create_edge(3840,6400,3080,3080), lower, 2, &out));
+    TEST_ASSERT_EQUAL_INT(2005, out.y);
+}
+
 /* ---- IsPointNearEdge — vertical edge ----
  * An edge at x=10 is the line between pixel 9 and pixel 10; both are "on" it. */
 

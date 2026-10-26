@@ -1,4 +1,5 @@
 #include "unity.h"
+extern void test_wrap_staggered_layout_destinations(void);
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -136,5 +137,6 @@ int main(void) {
     RUN_TEST(test_layout_id_differs_for_different_geometry);
     RUN_TEST(test_layout_id_small_buffer_is_empty_string);
 
+    RUN_TEST(test_wrap_staggered_layout_destinations);
     return UNITY_END();
 }
