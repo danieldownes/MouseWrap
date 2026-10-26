@@ -1,4 +1,4 @@
-﻿// Microsoft Visual C++ generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -49,7 +49,9 @@ END
 // Manifest (Common Controls v6, Per-Monitor V2 DPI, supported OS)
 //
 
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "MW4.manifest"
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -96,8 +98,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,2,0,0
- PRODUCTVERSION 4,2,0,0
+ FILEVERSION 4,3,0,0
+ PRODUCTVERSION 4,3,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -114,12 +116,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Daniel Downes - Immerse Labs Ltd"
             VALUE "FileDescription", "Mouse Utility to enable borderless screen movment"
-            VALUE "FileVersion", "4.2"
+            VALUE "FileVersion", "4.3"
             VALUE "InternalName", "MW4.exe"
             VALUE "LegalCopyright", "GNU GPL v2"
             VALUE "OriginalFilename", "MW4.exe"
             VALUE "ProductName", "MouseWrap"
-            VALUE "ProductVersion", "4.2"
+            VALUE "ProductVersion", "4.3"
         END
     END
     BLOCK "VarFileInfo"

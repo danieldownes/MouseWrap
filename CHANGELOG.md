@@ -1,5 +1,10 @@
 # Mouse Wrap — Change Log
 
+## Version 4.3 (2026)
+
+- **Reliable wrapping on offset screens.** Fixed the pointer getting stuck at the bottom or top of a second screen positioned higher or lower than the main screen. The pointer now lands on a real screen, preserving its horizontal or vertical position and the usual 5-pixel inset.
+- **One Options window.** Choosing Options again brings the existing window to the front instead of opening another copy.
+
 ## Version 4.2 (2026)
 
 ### Wrapping behaves better

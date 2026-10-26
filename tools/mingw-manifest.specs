@@ -1,0 +1,6 @@
+# Mouse Wrap embeds its own manifest in MW4.rc. Recent MinGW toolchains add
+# default-manifest.o automatically, producing conflicting RT_MANIFEST data.
+# This C17 application uses neither fast-math nor C++ vtable instrumentation;
+# retain the normal CRT end object without the injected default manifest.
+*endfile:
+crtend.o%s

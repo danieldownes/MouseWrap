@@ -39,7 +39,7 @@ Mouse Wrap has been trusted by users worldwide for **25 years**, continuously re
 
 # Latest Download
 
-[Mouse Wrap 4.2 release](https://github.com/danieldownes/MouseWrap/releases/tag/v4.2)
+[Mouse Wrap 4.3 release](https://github.com/danieldownes/MouseWrap/releases/tag/v4.3)
 
  - Multi-monitor aware mouse-wrapping
  - Theme aware traybar icon

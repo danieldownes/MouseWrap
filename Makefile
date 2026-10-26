@@ -3,10 +3,10 @@
 CC ?= gcc
 
 # --- Main application ---
-VERSION = 4.2
+VERSION = 4.3
 CFLAGS  = -std=c17 -Wall -Wextra -pedantic -Os -DUNICODE -D_UNICODE \
           -D_WIN32_WINNT=0x0A00 -DWINVER=0x0A00 -DPRODVER_STR='"$(VERSION)"'
-LDFLAGS = -mwindows -municode -s -luser32 -lshell32 -ladvapi32 -lshcore -lgdi32 -lgdiplus -lcomctl32 -ldwmapi -luxtheme
+LDFLAGS = -specs=tools/mingw-manifest.specs -mwindows -municode -s -luser32 -lshell32 -ladvapi32 -lshcore -lgdi32 -lgdiplus -lcomctl32 -ldwmapi -luxtheme
 
 SRCS = src/main.c src/mouse_wrap.c src/multimonitor_contour.c \
        src/multimonitor_edges.c src/taskbar.c src/startup.c src/options_dialog.c \
@@ -38,7 +38,7 @@ TEST_BIN     = test_runner
 all: $(BIN)
 
 # Build main binary
-$(BIN): $(OBJS) $(RES_OBJ)
+$(BIN): $(OBJS) $(RES_OBJ) tools/mingw-manifest.specs
 	@mkdir -p bin
 	$(CC) $(OBJS) $(RES_OBJ) -o $@ $(LDFLAGS)
 
